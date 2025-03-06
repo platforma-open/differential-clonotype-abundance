@@ -1,0 +1,25 @@
+// "hello world"
+wf := import("@platforma-sdk/workflow-tengo:workflow")
+exec := import("@platforma-sdk/workflow-tengo:exec")
+assets:= import("@platforma-sdk/workflow-tengo:assets")
+
+wf.body(func(args) {
+	python := exec.builder().
+		software(assets.importSoftware("@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.software:hello-world-python")).
+		arg(args.name).
+		saveStdoutContent().
+		run()
+	pythonMessage := python.getStdoutFileContent()
+
+	tengoMessage := "Hello from Tengo, " + args.name + "!"
+
+	return {
+		outputs: {
+			pythonMessage: pythonMessage,
+			tengoMessage: tengoMessage
+		},
+
+		exports: {}
+	}
+})
+

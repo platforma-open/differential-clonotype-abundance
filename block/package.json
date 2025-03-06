@@ -1,0 +1,43 @@
+{
+  "name": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rm -rf block-pack/* && block-tools pack"
+  },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ],
+  "dependencies": {
+    "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.workflow": "workspace:*",
+    "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.model": "workspace:*",
+    "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.ui": "workspace:*"
+  },
+  "block": {
+    "components": {
+      "workflow": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.workflow/dist/tengo/tpl/main.plj.gz",
+      "model": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.model/dist/model.json",
+      "ui": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.ui/dist"
+    },
+    "meta": {
+      "title": "Block Title",
+      "logo": "file:../logos/block-logo.png",
+      "url": "https://github.com/milaboratory/platforma-differential-clonotype-abundance",
+      "docs": "https://github.com/milaboratory/platforma-differential-clonotype-abundance/docs",
+      "support": "mailto:support@milaboratories.com",
+      "description": "Simple Hello World block that can be used as a boilerplate for newly created blocks.",
+      "longDescription": "file:../docs/description.md",
+      "changelog": "file:../CHANGELOG.md",
+      "tags": ["tutorial"],
+      "organization": {
+        "name": "MiLaboratories Inc",
+        "url": "https://milaboratories.com/",
+        "logo": "file:../logos/milaboratories.png"
+      }
+    }
+  },
+  "devDependencies": {
+    "@platforma-sdk/block-tools": "catalog:"
+  },
+  "packageManager": "pnpm@9.12.0"
+}

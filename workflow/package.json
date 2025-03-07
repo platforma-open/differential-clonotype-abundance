@@ -1,5 +1,5 @@
 {
-  "name": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.workflow",
+  "name": "@platforma-open/milaboratories.differential-clonotype-abundance.workflow",
   "version": "1.0.0",
   "type": "module",
   "description": "Block Workflow",
@@ -9,7 +9,6 @@
     "format": "/usr/bin/env emacs --script ./format.el"
   },
   "dependencies": {
-    "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.software": "workspace:*"
   },
   "devDependencies": {
     "@platforma-sdk/tengo-builder": "catalog:",

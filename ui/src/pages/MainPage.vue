@@ -12,21 +12,34 @@ import {
   PlDropdownRef,
   PlMaskIcon24,
   PlSlideModal,
+  PlAccordionSection,
+  PlNumberField,
+  PlRow,
+  PlAlert,
 } from '@platforma-sdk/ui-vue';
 import { computed, ref, watch } from 'vue';
 import { useApp } from '../app';
+import ErrorBoundary from '../components/ErrorBoundary.vue';
 
 const app = useApp();
 
-const tableSettings = computed<PlDataTableSettings>(() => ({
-  sourceType: 'ptable',
-  pTable: app.model.outputs.pt,
-}));
+// const tableSettings = computed<PlDataTableSettings>(() => ({
+//   sourceType: 'ptable',
+//   pTable: app.model.outputs.pt,
+// }));
 
-const settingsAreShown = ref(app.model.outputs.pt === undefined);
+const settingsAreShown = ref(app.model.outputs.chainOptions === undefined);
 const showSettings = () => {
   settingsAreShown.value = true;
 };
+
+// Igg chain options
+const chainOptions = computed(() => {
+  return app.model.outputs.chainOptions?.map((v) => ({
+    value: v.value,
+    label: v.label,
+  }));
+});
 
 const covariateOptions = computed(() => {
   return app.model.outputs.metadataOptions?.map((v) => ({
@@ -42,18 +55,6 @@ const contrastFactorOptions = computed(() => {
   }));
 });
 
-// Generate list of comparisons with all possible numerator x denominator combinations
-const comparisonOptions = computed(() => {
-  const options: string[] = [];
-  if (app.model.args.numerators.length !== 0
-    && app.model.args.denominator !== undefined) {
-    for (const num of app.model.args.numerators) {
-      options.push(num + ' - vs - ' + app.model.args.denominator);
-    }
-  }
-  return listToOptions(options);
-});
-
 const numeratorOptions = computed(() => {
   return app.model.outputs.denominatorOptions?.map((v) => ({
     value: v,
@@ -64,12 +65,17 @@ const numeratorOptions = computed(() => {
 // Only options not selected as numerators[] are accepted as denominator
 const denominatorOptions = computed(() => {
   return numeratorOptions.value?.filter((op) =>
-    !app.model.args.numerators.includes(op.value));
+    app.model.args.numerator !== op.value);
 });
 
-watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
-  if (!app.model.ui.comparison && (comparisonOptions.value.length !== 0)) {
-    app.model.ui.comparison = comparisonOptions.value[0].value;
+// Generate list of comparisons with all possible numerator x denominator combinations
+const selectedChainOptions = computed(() => {
+  return listToOptions(app.model.args.IGChain);
+});
+
+watch(() => app.model.args.IGChain, (_) => {
+  if (!app.model.ui.selectedChain && (selectedChainOptions.value.length !== 0)) {
+    app.model.ui.selectedChain = selectedChainOptions.value[0].value;
   }
 }, { deep: true, immediate: true });
 
@@ -77,12 +83,12 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
 
 <template>
   <PlBlockPage>
-    <template #title>Differential Gene Expression</template>
+    <template #title>Differential Clonotype Abundance</template>
     <template #append>
       <PlDropdown
-        v-model="app.model.ui.comparison"
-        :options="comparisonOptions"
-        label="Comparison" :style="{ width: '300px' }"
+        v-model="app.model.ui.selectedChain"
+        :options="selectedChainOptions"
+        label="Chain" :style="{ width: '300px' }"
       >
         <template #tooltip>
           Select the specific Numerator - vs - Denominator comparison to be shown in table and plots
@@ -100,7 +106,6 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
     <ErrorBoundary>
       <PlAgDataTable
         v-model="app.model.ui.tableState"
-        :settings="tableSettings"
         show-columns-panel
         show-export-button
       />
@@ -111,14 +116,44 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
         v-model="app.model.args.countsRef" :options="app.model.outputs.countsOptions"
         label="Select dataset"
       />
-      <PlDropdownMulti v-model="app.model.args.covariateRefs" :options="covariateOptions" label="Design" />
-      <PlDropdown v-model="app.model.args.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
-      <PlDropdownMulti v-model="app.model.args.numerators" :options="numeratorOptions" label="Numerator" >
+      <PlDropdownMulti
+        v-model="app.model.args.IGChain"
+        :options="chainOptions" label="Selected chains"
+      >
         <template #tooltip>
-          Calculate a contrast per each one of the selected Numerators versus the selected control/baseline
+          Select IG chains on which to perform differential abundance
         </template>
       </PlDropdownMulti>
+      <PlDropdownMulti v-model="app.model.args.covariateRefs" :options="covariateOptions" label="Design" />
+      <PlDropdown v-model="app.model.args.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
+      <PlDropdown v-model="app.model.args.numerator" :options="numeratorOptions" label="Numerator" />
       <PlDropdown v-model="app.model.args.denominator" :options="denominatorOptions" label="Denominator" />
+      <!-- Content hidden until you click THRESHOLD PARAMETERS -->
+      <PlAccordionSection label="THRESHOLD PARAMETERS">
+        <PlRow>
+          <PlNumberField
+            v-model="app.model.args.log2FCThreshold"
+            label="Log2(FC)" :minValue="0" :step="0.1"
+          >
+            <template #tooltip>
+              Select a valid absolute log2(FC) threshold for identifying
+              significant DEGs. Genes meeting this criterion will be used as
+              input for downstream analyses.
+            </template>
+          </PlNumberField>
+          <PlNumberField
+            v-model="app.model.args.pAdjFCThreshold"
+            label="Adjusted p-value" :minValue="0" :maxValue="1" :step="0.01"
+          />
+        </PlRow>
+        <!-- Add warnings if selected threshold are out of most commonly used bounds -->
+        <PlAlert v-if="app.model.args.pAdjFCThreshold > 0.05" type="warn">
+          {{ "Warning: The selected adjusted p-value threshold is higher than the most commonly used 0.05" }}
+        </PlAlert>
+        <PlAlert v-if="app.model.args.log2FCThreshold < 0.6" type="warn">
+          {{ "Warning: The selected Log2(FC) threshold may be too low for most use cases" }}
+        </PlAlert>
+      </PlAccordionSection>
     </PlSlideModal>
   </PlBlockPage>
 </template>

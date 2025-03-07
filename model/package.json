@@ -1,6 +1,6 @@
 {
-  "name": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.model",
-  "version": "1.0.0",
+  "name": "@platforma-open/milaboratories.differential-clonotype-abundance.model",
+  "version": "2.1.0",
   "description": "Block model",
   "type": "module",
   "main": "dist/index.cjs",
@@ -11,7 +11,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@platforma-sdk/model": "catalog:"
+    "@platforma-sdk/model": "catalog:",
+    "@milaboratories/graph-maker": "catalog:"
   },
   "devDependencies": {
     "@platforma-sdk/block-tools": "catalog:",

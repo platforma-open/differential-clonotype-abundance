@@ -1,5 +1,5 @@
 {
-  "name": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance",
+  "name": "@platforma-open/milaboratories.differential-clonotype-abundance",
   "version": "1.0.0",
   "scripts": {
     "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json,vue}\"",

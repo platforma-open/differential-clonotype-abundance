@@ -3,19 +3,25 @@ wf := import("@platforma-sdk/workflow-tengo:workflow")
 exec := import("@platforma-sdk/workflow-tengo:exec")
 assets:= import("@platforma-sdk/workflow-tengo:assets")
 
+
+wf.prepare(func(args){
+
+
+	return {
+		resolvedInput: wf.resolve(args.countsRef, { errIfMissing: true })
+	}
+})
+
 wf.body(func(args) {
-	python := exec.builder().
-		software(assets.importSoftware("@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.software:hello-world-python")).
-		arg(args.name).
-		saveStdoutContent().
-		run()
-	pythonMessage := python.getStdoutFileContent()
+	blockId := wf.blockId().getDataAsJson()
+
+	rawCounts := args.resolvedInput
+	countsSpec := rawCounts.spec
 
 	tengoMessage := "Hello from Tengo, " + args.name + "!"
 
 	return {
 		outputs: {
-			pythonMessage: pythonMessage,
 			tengoMessage: tengoMessage
 		},
 

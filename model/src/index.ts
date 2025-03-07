@@ -1,4 +1,4 @@
-//import type { GraphMakerState } from '@milaboratories/graph-maker';
+import type { GraphMakerState } from '@milaboratories/graph-maker';
 import type {
   InferOutputsType,
   PColumnIdAndSpec,
@@ -8,14 +8,16 @@ import type {
 import {
   BlockModel,
   createPlDataTable,
+  createPlDataTableSheet,
+  getUniquePartitionKeys,
   isPColumn,
   isPColumnSpec,
 } from '@platforma-sdk/model';
 
 export type UiState = {
   tableState: PlDataTableState;
- // graphState: GraphMakerState;
-  comparison?: string;
+  // graphState: GraphMakerState;
+  selectedChain?: string;
 };
 
 // export type Formula = {
@@ -31,40 +33,22 @@ export type UiState = {
 export type BlockArgs = {
   countsRef?: PlRef;
   // formulas: Formula[];
+  IGChain: string[];
   covariateRefs: PlRef[];
   contrastFactor?: PlRef;
   denominator?: string;
-  numerators: string[];
+  numerator?: string;
+  log2FCThreshold: number;
+  pAdjFCThreshold: number;
 };
-
-// function filterTopTablePCols(pCols: PColumn) {
-//   if ((pCols === undefined) || !(isPColumn(pCols))) {
-//     return undefined;
-//   }
-//   // Allow only log2 FC and -log10 Padjust as options for volcano axis
-//   // Include gene symbol for future filters
-//   pCols = pCols.filter(
-//     (col) => (col.spec.name === 'pl7.app/rna-seq/log2foldchange'
-//       || col.spec.name === 'pl7.app/rna-seq/minlog10padj'
-//       || col.spec.name === 'pl7.app/rna-seq/regulationDirection'
-//       || col.spec.name === 'pl7.app/rna-seq/genesymbol')
-//     && col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.args.comparison,
-//   );
-
-//   return pCols;
-// }
 
 export const model = BlockModel.create()
 
   .withArgs<BlockArgs>({
-    // formulas: [
-    //   {
-    //     label: 'Formula',
-    //     covariateRefs: []
-    //   }
-    // ]
+    IGChain: [],
     covariateRefs: [],
-    numerators: [],
+    log2FCThreshold: 1,
+    pAdjFCThreshold: 0.05,
   })
 
   .withUiState<UiState>({
@@ -75,23 +59,28 @@ export const model = BlockModel.create()
         filters: [],
       },
     },
-    graphState: {
-      title: 'Differential gene expression',
-      template: 'dots',
-      currentTab: null,
-    },
+    // graphState: {
+    //   title: 'Differential gene expression',
+    //   template: 'dots',
+    //   currentTab: null,
+    // },
   })
 
-  // User can only select as input raw gene count matrices
-  // includeNativeLabel ensures raw counts pl7.app/label (native label, 'Raw gene expression')
+  // Activate "Run" button only after these conditions are satisfied
+  .argsValid((ctx) => (
+    (ctx.args.log2FCThreshold !== undefined)
+    && (ctx.args.pAdjFCThreshold !== undefined)
+  ))
+
+  // User can only select as input read/UMI count matrices
+  // includeNativeLabel ensures native label
   // is visible in selection (by default we see Samples & data ID)
   // addLabelAsSuffix moves the native label to the end
-  // Result: [dataID] / Raw gene expression
+  // Result: [dataID] / input
+  // @TODO: Use UMI counts when present, otherwise read counts
   .output('countsOptions', (ctx) =>
-    // I've added these "||" for backward compatibility (As I see, the shape of PColum was changed)
     ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/rna-seq/countMatrix' || spec.name === 'countMatrix')
-      && (spec.annotations?.['pl7.app/rna-seq/normalized'] === 'false' || spec.domain?.['pl7.app/rna-seq/normalized'] === 'false')
+      && (spec.name === 'pl7.app/vdj/readCount' || spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
     , { includeNativeLabel: true, addLabelAsSuffix: true }),
   )
 
@@ -102,6 +91,32 @@ export const model = BlockModel.create()
   .output('datasetSpec', (ctx) => {
     if (ctx.args.countsRef) return ctx.resultPool.getSpecByRef(ctx.args.countsRef);
     else return undefined;
+  })
+
+  // Get axis options associated to selected input data
+  // Only works with bulk for now
+  .output('chainOptions', (ctx) => {
+    if (!ctx.args.countsRef) return undefined;
+    const mainDataSpec = ctx.resultPool.getPColumnByRef(ctx.args.countsRef);
+    if (!mainDataSpec) return undefined;
+
+    const column = ctx.resultPool.getData().entries
+      .map(({ obj }) => obj)
+      .filter(isPColumn)
+      .find((it) => it.id === mainDataSpec.id);
+    if (!column) return undefined;
+
+    const r = getUniquePartitionKeys(column.data);
+    if (!r) return undefined;
+
+    const dataTable = r.map((values, i) => createPlDataTableSheet(ctx,
+      column.spec.axesSpec[i],
+      values));
+
+    const chainsSheet = dataTable.find((it) => it.axis.name === 'pl7.app/vdj/chain');
+    if (!chainsSheet) return undefined;
+    const chains = chainsSheet.options;
+    return chains;
   })
 
   .output('denominatorOptions', (ctx) => {
@@ -116,78 +131,11 @@ export const model = BlockModel.create()
     return [...new Set(Object.values(values))];
   })
 
-  // Returns a map of results
-  .output('pt', (ctx) => {
-    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
-    if (pCols === undefined) {
-      return undefined;
-    }
-
-    // Filter by selected comparison
-    pCols = pCols.filter(
-      (col) => col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
-    );
-
-    return createPlDataTable(ctx, pCols, ctx.uiState?.tableState);
-  })
-
-  .output('topTablePcols', (ctx) => {
-    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
-    if (pCols === undefined) {
-      return undefined;
-    }
-    // Allow only log2 FC and -log10 Padjust as options for volcano axis
-    // Include gene symbol for future filters
-    pCols = pCols.filter(
-      (col) => (col.spec.name === 'pl7.app/rna-seq/log2foldchange'
-        || col.spec.name === 'pl7.app/rna-seq/minlog10padj'
-        || col.spec.name === 'pl7.app/rna-seq/regulationDirection'
-        || col.spec.name === 'pl7.app/rna-seq/genesymbol')
-      // Only values associated to selected comparison
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
-    );
-
-    return pCols.map(
-      (c) =>
-        ({
-          columnId: c.id,
-          spec: c.spec,
-        } satisfies PColumnIdAndSpec),
-    );
-  })
-
-  .output('topTablePf', (ctx): PFrameHandle | undefined => {
-    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
-    if (pCols === undefined) {
-      return undefined;
-    }
-    // Allow only log2 FC and -log10 Padjust as options for volcano axis
-    // Include gene symbol for future filters
-    pCols = pCols.filter(
-      (col) => (col.spec.name === 'pl7.app/rna-seq/log2foldchange'
-        || col.spec.name === 'pl7.app/rna-seq/minlog10padj'
-        || col.spec.name === 'pl7.app/rna-seq/regulationDirection'
-        || col.spec.name === 'pl7.app/rna-seq/genesymbol')
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
-    );
-
-    // enriching with upstream data
-    const upstream = ctx.resultPool
-      .getData()
-      .entries.map((v) => v.obj)
-      .filter(isPColumn)
-      .filter((column) => column.spec.name === 'pl7.app/metadata');
-
-    return ctx.createPFrame([...pCols, ...upstream]);
-  })
-
   .sections((_ctx) => ([
     { type: 'link', href: '/', label: 'Contrast' },
-    { type: 'link', href: '/graph', label: 'Volcano plot' },
+    // { type: 'link', href: '/graph', label: 'Volcano plot' },
   ]))
 
   .done();
 
 export type BlockOutputs = InferOutputsType<typeof model>;
-
-

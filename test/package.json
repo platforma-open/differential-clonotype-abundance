@@ -1,5 +1,5 @@
 {
-  "name": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.test",
+  "name": "@platforma-open/milaboratories.differential-clonotype-abundance.test",
   "private": true,
   "version": "1.0.0",
   "description": "Block tests",
@@ -10,7 +10,7 @@
   "files": [],
   "keywords": [],
   "dependencies": {
-    "this-block": "workspace:@platforma-open/MiLaboratories Inc.differential-clonotype-abundance@*"
+    "this-block": "workspace:@platforma-open/milaboratories.differential-clonotype-abundance@*"
   },
   "devDependencies": {
     "@platforma-sdk/test": "catalog:",

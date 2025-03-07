@@ -1,17 +1,19 @@
 {
-  "name": "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.ui",
-  "version": "1.0.0",
+  "name": "@platforma-open/milaboratories.differential-clonotype-abundance.ui",
+  "version": "1.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "watch": "vue-tsc && vite build --watch",
     "build": "vue-tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@platforma-open/MiLaboratories Inc.differential-clonotype-abundance.model": "workspace:*",
+    "@platforma-open/milaboratories.differential-clonotype-abundance.model": "workspace:*",
+    "@milaboratories/graph-maker": "catalog:",
     "@platforma-sdk/ui-vue": "catalog:",
+    "@platforma-sdk/model": "catalog:",
     "vue": "catalog:"
   },
   "devDependencies": {

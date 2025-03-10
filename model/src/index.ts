@@ -18,6 +18,7 @@ export type UiState = {
   tableState: PlDataTableState;
   // graphState: GraphMakerState;
   selectedChain?: string;
+  comparison?: string;
 };
 
 // export type Formula = {
@@ -37,7 +38,7 @@ export type BlockArgs = {
   covariateRefs: PlRef[];
   contrastFactor?: PlRef;
   denominator?: string;
-  numerator?: string;
+  numerators: string[];
   log2FCThreshold: number;
   pAdjFCThreshold: number;
 };
@@ -46,6 +47,7 @@ export const model = BlockModel.create()
 
   .withArgs<BlockArgs>({
     IGChain: [],
+    numerators: [],
     covariateRefs: [],
     log2FCThreshold: 1,
     pAdjFCThreshold: 0.05,
@@ -72,17 +74,28 @@ export const model = BlockModel.create()
     && (ctx.args.pAdjFCThreshold !== undefined)
   ))
 
-  // User can only select as input read/UMI count matrices
-  // includeNativeLabel ensures native label
-  // is visible in selection (by default we see Samples & data ID)
-  // addLabelAsSuffix moves the native label to the end
+  // User can only select as input UMI count matrices or read count matrices
+  // for cases where we don't have UMI counts
+  // includeNativeLabel and addLabelAsSuffix makes visible the data source dataset
   // Result: [dataID] / input
-  // @TODO: Use UMI counts when present, otherwise read counts
-  .output('countsOptions', (ctx) =>
-    ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/readCount' || spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
-    , { includeNativeLabel: true, addLabelAsSuffix: true }),
-  )
+  .output('countsOptions', (ctx) => {
+    // First get all UMI count dataset and their block IDs
+    const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
+      && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
+    , { includeNativeLabel: true, addLabelAsSuffix: true });
+    const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
+
+    // Then get all read count datasets that don't match blockIDs from UMI counts
+    let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
+      && (spec.name === 'pl7.app/vdj/readCount')
+    , { includeNativeLabel: true, addLabelAsSuffix: true });
+    validCountOptions = validCountOptions.filter((item) =>
+      !umiBlockIds.includes(item.ref.blockId));
+
+    // Combine all valid options
+    const validOptions = [...validUmiOptions, ...validCountOptions];
+    return validOptions;
+  })
 
   .output('metadataOptions', (ctx) =>
     ctx.resultPool.getOptions((spec) => isPColumnSpec(spec) && spec.name === 'pl7.app/metadata'),
@@ -97,13 +110,13 @@ export const model = BlockModel.create()
   // Only works with bulk for now
   .output('chainOptions', (ctx) => {
     if (!ctx.args.countsRef) return undefined;
-    const mainDataSpec = ctx.resultPool.getPColumnByRef(ctx.args.countsRef);
-    if (!mainDataSpec) return undefined;
+    const inputPcol = ctx.resultPool.getPColumnByRef(ctx.args.countsRef);
+    if (!inputPcol) return undefined;
 
     const column = ctx.resultPool.getData().entries
       .map(({ obj }) => obj)
       .filter(isPColumn)
-      .find((it) => it.id === mainDataSpec.id);
+      .find((it) => it.id === inputPcol.id);
     if (!column) return undefined;
 
     const r = getUniquePartitionKeys(column.data);

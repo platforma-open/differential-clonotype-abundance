@@ -65,7 +65,7 @@ const numeratorOptions = computed(() => {
 // Only options not selected as numerators[] are accepted as denominator
 const denominatorOptions = computed(() => {
   return numeratorOptions.value?.filter((op) =>
-    app.model.args.numerator !== op.value);
+    !app.model.args.numerators.includes(op.value));
 });
 
 // Generate list of comparisons with all possible numerator x denominator combinations
@@ -73,11 +73,29 @@ const selectedChainOptions = computed(() => {
   return listToOptions(app.model.args.IGChain);
 });
 
+// Generate list of comparisons with all possible numerator x denominator combinations
+const comparisonOptions = computed(() => {
+  const options: string[] = [];
+  if (app.model.args.numerators.length !== 0
+    && app.model.args.denominator !== undefined) {
+    for (const num of app.model.args.numerators) {
+      options.push(num + ' - vs - ' + app.model.args.denominator);
+    }
+  }
+  return listToOptions(options);
+});
+
 watch(() => app.model.args.IGChain, (_) => {
   if (!app.model.ui.selectedChain && (selectedChainOptions.value.length !== 0)) {
     app.model.ui.selectedChain = selectedChainOptions.value[0].value;
   }
-}, { deep: true, immediate: true });
+});
+
+watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
+  if (!app.model.ui.comparison && (comparisonOptions.value.length !== 0)) {
+    app.model.ui.comparison = comparisonOptions.value[0].value;
+  }
+});
 
 </script>
 
@@ -89,6 +107,15 @@ watch(() => app.model.args.IGChain, (_) => {
         v-model="app.model.ui.selectedChain"
         :options="selectedChainOptions"
         label="Chain" :style="{ width: '300px' }"
+      >
+        <template #tooltip>
+          Select the specific chain results to be shown in table and plots
+        </template>
+      </PlDropdown>
+      <PlDropdown
+        v-model="app.model.ui.comparison"
+        :options="comparisonOptions"
+        label="Comparison" :style="{ width: '300px' }"
       >
         <template #tooltip>
           Select the specific Numerator - vs - Denominator comparison to be shown in table and plots
@@ -126,7 +153,11 @@ watch(() => app.model.args.IGChain, (_) => {
       </PlDropdownMulti>
       <PlDropdownMulti v-model="app.model.args.covariateRefs" :options="covariateOptions" label="Design" />
       <PlDropdown v-model="app.model.args.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
-      <PlDropdown v-model="app.model.args.numerator" :options="numeratorOptions" label="Numerator" />
+      <PlDropdownMulti v-model="app.model.args.numerators" :options="numeratorOptions" label="Numerator" >
+        <template #tooltip>
+          Calculate a contrast per each one of the selected Numerators versus the selected control/baseline
+        </template>
+      </PlDropdownMulti>
       <PlDropdown v-model="app.model.args.denominator" :options="denominatorOptions" label="Denominator" />
       <!-- Content hidden until you click THRESHOLD PARAMETERS -->
       <PlAccordionSection label="THRESHOLD PARAMETERS">

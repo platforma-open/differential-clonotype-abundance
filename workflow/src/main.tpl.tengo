@@ -2,27 +2,54 @@
 wf := import("@platforma-sdk/workflow-tengo:workflow")
 exec := import("@platforma-sdk/workflow-tengo:exec")
 assets:= import("@platforma-sdk/workflow-tengo:assets")
+xsv := import("@platforma-sdk/workflow-tengo:pframes.xsv")
 
 
 wf.prepare(func(args){
 
+	// below solution not working currently
+	metaRefs := {}
+
+	i := 0
+	for metaRef in args.covariateRefs {
+		metaRefs["metaRef" + i ] = wf.resolve(metaRef, { errIfMissing: true })
+		i = i + 1
+	}
 
 	return {
-		resolvedInput: wf.resolve(args.countsRef, { errIfMissing: true })
+		resolvedInput: wf.resolve(args.countsRef, { errIfMissing: true }),
+		resolvedContrastFactor: wf.resolve(args.contrastFactor),
+		metaRefs: metaRefs
 	}
 })
 
 wf.body(func(args) {
 	blockId := wf.blockId().getDataAsJson()
 
-	rawCounts := args.resolvedInput
-	countsSpec := rawCounts.spec
+	allCounts := args.resolvedInput
+	countsSpec := allCounts.spec
 
-	tengoMessage := "Hello from Tengo, " + args.name + "!"
+	IgChains := args.IGChain
+	contrastFactor := args.resolvedContrastFactor
+	denominator := args.denominator
+	log2FCThreshold := args.log2FCThreshold
+	pAdjFCThreshold := args.pAdjFCThreshold
+
+	covariates := []
+	for _, v in args.metaRefs {
+		covariates = append(covariates, v)
+	}
+
+	ll := import("@platforma-sdk/workflow-tengo:ll")
+	maps := import("@platforma-sdk/workflow-tengo:maps")
+	ll.panic("%v", maps.getKeys(allCounts))
+
+	// convert PColumns to csv
+	csvCounts := xsv.exportFrame([allCounts], "csv", {})
+	csvCovariates := xsv.exportFrame(covariates, "csv", {})
 
 	return {
 		outputs: {
-			tengoMessage: tengoMessage
 		},
 
 		exports: {}

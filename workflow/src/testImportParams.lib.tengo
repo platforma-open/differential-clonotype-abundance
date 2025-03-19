@@ -1,0 +1,46 @@
+ll := import("@platforma-sdk/workflow-tengo:ll")
+
+getColumns := func() {
+	cols := {
+		"axes": [
+			{
+				"column": "Sample",
+				"spec": {
+					"name": "pl7.app/sampleId",
+					"type": "String",
+					"annotations": {
+						"pl7.app/label": "Sample"
+					}
+			}
+			},
+			{
+				"column": "Clonotype key",
+				"spec": {
+					"name": "pl7.app/vdj/clonotypeKey",
+					"type": "String",
+					"annotations": {
+						"pl7.app/label": "Clonotype key"
+					}
+			}
+			}],
+		"columns": [
+			{
+				"column": "Number of UMIs2",
+				"spec": {
+					"name": "pl7.app/vdj/uniqueMoleculeCount",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "Counts"
+					}
+			}
+			}],
+		"storageFormat": "Binary",
+		"partitionKeyLength": 0
+	}
+
+	return cols
+}
+
+export ll.toStrict({
+	getColumns: getColumns
+})

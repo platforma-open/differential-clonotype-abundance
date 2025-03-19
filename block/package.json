@@ -25,7 +25,7 @@
       "url": "https://github.com/platforma-open/differential-clonotype-abundance",
       "docs": "https://github.com/platforma-open/differential-clonotype-abundance/docs",
       "support": "mailto:support@milaboratories.com",
-      "description": " !!!!!!!!!!    TO BE DONE    !!!!!!!!!!!",
+      "description": "Identify differentially abundant clonotypes between conditions.",
       "longDescription": "file:../docs/description.md",
       "changelog": "file:../CHANGELOG.md",
       "tags": ["tutorial"],

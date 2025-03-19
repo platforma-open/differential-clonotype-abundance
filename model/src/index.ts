@@ -34,7 +34,7 @@ export type UiState = {
 export type BlockArgs = {
   countsRef?: PlRef;
   // formulas: Formula[];
-  IGChain: string[];
+  // IGChain: string[];
   covariateRefs: PlRef[];
   contrastFactor?: PlRef;
   denominator?: string;
@@ -46,7 +46,7 @@ export type BlockArgs = {
 export const model = BlockModel.create()
 
   .withArgs<BlockArgs>({
-    IGChain: [],
+    // IGChain: [],
     numerators: [],
     covariateRefs: [],
     log2FCThreshold: 1,
@@ -108,7 +108,15 @@ export const model = BlockModel.create()
 
   // Get axis options associated to selected input data
   // Only works with bulk for now
-  .output('chainOptions', (ctx) => {
+  .output('test2', (ctx) => {
+    const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
+      && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
+    , { includeNativeLabel: true, addLabelAsSuffix: true });
+
+    return validUmiOptions;
+  })
+
+  .output('test', (ctx) => {
     if (!ctx.args.countsRef) return undefined;
     const inputPcol = ctx.resultPool.getPColumnByRef(ctx.args.countsRef);
     if (!inputPcol) return undefined;
@@ -126,10 +134,10 @@ export const model = BlockModel.create()
       column.spec.axesSpec[i],
       values));
 
-    const chainsSheet = dataTable.find((it) => it.axis.name === 'pl7.app/vdj/chain');
-    if (!chainsSheet) return undefined;
-    const chains = chainsSheet.options;
-    return chains;
+    // const chainsSheet = dataTable.find((it) => it.axis.name === 'pl7.app/vdj/chain');
+    // if (!chainsSheet) return undefined;
+    // const chains = chainsSheet.options;
+    return dataTable;
   })
 
   .output('denominatorOptions', (ctx) => {

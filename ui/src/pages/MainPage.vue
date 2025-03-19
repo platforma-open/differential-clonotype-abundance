@@ -28,18 +28,18 @@ const app = useApp();
 //   pTable: app.model.outputs.pt,
 // }));
 
-const settingsAreShown = ref(app.model.outputs.chainOptions === undefined);
+const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
 const showSettings = () => {
   settingsAreShown.value = true;
 };
 
 // Igg chain options
-const chainOptions = computed(() => {
-  return app.model.outputs.chainOptions?.map((v) => ({
-    value: v.value,
-    label: v.label,
-  }));
-});
+// const chainOptions = computed(() => {
+//   return app.model.outputs.chainOptions?.map((v) => ({
+//     value: v.value,
+//     label: v.label,
+//   }));
+// });
 
 const covariateOptions = computed(() => {
   return app.model.outputs.metadataOptions?.map((v) => ({
@@ -69,9 +69,9 @@ const denominatorOptions = computed(() => {
 });
 
 // Generate list of comparisons with all possible numerator x denominator combinations
-const selectedChainOptions = computed(() => {
-  return listToOptions(app.model.args.IGChain);
-});
+// const selectedChainOptions = computed(() => {
+//   return listToOptions(app.model.args.IGChain);
+// });
 
 // Generate list of comparisons with all possible numerator x denominator combinations
 const comparisonOptions = computed(() => {
@@ -85,11 +85,11 @@ const comparisonOptions = computed(() => {
   return listToOptions(options);
 });
 
-watch(() => app.model.args.IGChain, (_) => {
-  if (!app.model.ui.selectedChain && (selectedChainOptions.value.length !== 0)) {
-    app.model.ui.selectedChain = selectedChainOptions.value[0].value;
-  }
-});
+// watch(() => app.model.args.IGChain, (_) => {
+//   if (!app.model.ui.selectedChain && (selectedChainOptions.value.length !== 0)) {
+//     app.model.ui.selectedChain = selectedChainOptions.value[0].value;
+//   }
+// });
 
 watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
   if (!app.model.ui.comparison && (comparisonOptions.value.length !== 0)) {
@@ -104,18 +104,9 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
     <template #title>Differential Clonotype Abundance</template>
     <template #append>
       <PlDropdown
-        v-model="app.model.ui.selectedChain"
-        :options="selectedChainOptions"
-        label="Chain" :style="{ width: '300px' }"
-      >
-        <template #tooltip>
-          Select the specific chain results to be shown in table and plots
-        </template>
-      </PlDropdown>
-      <PlDropdown
         v-model="app.model.ui.comparison"
         :options="comparisonOptions"
-        label="Comparison" :style="{ width: '300px' }"
+        label="Comparison" :style="{ width: '150' }"
       >
         <template #tooltip>
           Select the specific Numerator - vs - Denominator comparison to be shown in table and plots
@@ -143,14 +134,6 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
         v-model="app.model.args.countsRef" :options="app.model.outputs.countsOptions"
         label="Select dataset"
       />
-      <PlDropdownMulti
-        v-model="app.model.args.IGChain"
-        :options="chainOptions" label="Selected chains"
-      >
-        <template #tooltip>
-          Select IG chains on which to perform differential abundance
-        </template>
-      </PlDropdownMulti>
       <PlDropdownMulti v-model="app.model.args.covariateRefs" :options="covariateOptions" label="Design" />
       <PlDropdown v-model="app.model.args.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
       <PlDropdownMulti v-model="app.model.args.numerators" :options="numeratorOptions" label="Numerator" >

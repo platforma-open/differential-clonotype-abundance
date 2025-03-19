@@ -16,25 +16,13 @@ import {
 
 export type UiState = {
   tableState: PlDataTableState;
-  // graphState: GraphMakerState;
+  graphState: GraphMakerState;
   selectedChain?: string;
   comparison?: string;
 };
 
-// export type Formula = {
-//   // we put formula label in the arg as it will be used
-//   // in the annotations to re-use in the downstream blocks
-//   label: string;
-//   covariateRefs: PlRef[];
-//   contrastFactor?: PlRef;
-//   denominator?: String;
-//   numerator?: String;
-// };
-
 export type BlockArgs = {
   countsRef?: PlRef;
-  // formulas: Formula[];
-  // IGChain: string[];
   covariateRefs: PlRef[];
   contrastFactor?: PlRef;
   denominator?: string;
@@ -61,11 +49,11 @@ export const model = BlockModel.create()
         filters: [],
       },
     },
-    // graphState: {
-    //   title: 'Differential gene expression',
-    //   template: 'dots',
-    //   currentTab: null,
-    // },
+    graphState: {
+      title: 'Differential gene expression',
+      template: 'dots',
+      currentTab: null,
+    },
   })
 
   // Activate "Run" button only after these conditions are satisfied
@@ -106,40 +94,6 @@ export const model = BlockModel.create()
     else return undefined;
   })
 
-  // Get axis options associated to selected input data
-  // Only works with bulk for now
-  .output('test2', (ctx) => {
-    const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
-    , { includeNativeLabel: true, addLabelAsSuffix: true });
-
-    return validUmiOptions;
-  })
-
-  .output('test', (ctx) => {
-    if (!ctx.args.countsRef) return undefined;
-    const inputPcol = ctx.resultPool.getPColumnByRef(ctx.args.countsRef);
-    if (!inputPcol) return undefined;
-
-    const column = ctx.resultPool.getData().entries
-      .map(({ obj }) => obj)
-      .filter(isPColumn)
-      .find((it) => it.id === inputPcol.id);
-    if (!column) return undefined;
-
-    const r = getUniquePartitionKeys(column.data);
-    if (!r) return undefined;
-
-    const dataTable = r.map((values, i) => createPlDataTableSheet(ctx,
-      column.spec.axesSpec[i],
-      values));
-
-    // const chainsSheet = dataTable.find((it) => it.axis.name === 'pl7.app/vdj/chain');
-    // if (!chainsSheet) return undefined;
-    // const chains = chainsSheet.options;
-    return dataTable;
-  })
-
   .output('denominatorOptions', (ctx) => {
     if (!ctx.args.contrastFactor) return undefined;
 
@@ -152,9 +106,72 @@ export const model = BlockModel.create()
     return [...new Set(Object.values(values))];
   })
 
+  // Returns a map of results
+  .output('pt', (ctx) => {
+    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (pCols === undefined) {
+      return undefined;
+    }
+
+    // Filter by selected comparison
+    pCols = pCols.filter(
+      (col) => col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
+    );
+
+    return createPlDataTable(ctx, pCols, ctx.uiState?.tableState);
+  })
+
+  .output('topTablePcols', (ctx) => {
+    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (pCols === undefined) {
+      return undefined;
+    }
+    // Allow only log2 FC and -log10 Padjust as options for volcano axis
+    // Include gene symbol for future filters
+    pCols = pCols.filter(
+      (col) => (col.spec.name === 'pl7.app/abundance/log2foldchange'
+        || col.spec.name === 'pl7.app/abundance/minlog10padj'
+        || col.spec.name === 'pl7.app/abundance/regulationDirection')
+      // Only values associated to selected comparison
+      && col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
+    );
+
+    return pCols.map(
+      (c) =>
+        ({
+          columnId: c.id,
+          spec: c.spec,
+        } satisfies PColumnIdAndSpec),
+    );
+  })
+
+  .output('topTablePf', (ctx): PFrameHandle | undefined => {
+    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (pCols === undefined) {
+      return undefined;
+    }
+    // Allow only log2 FC and -log10 Padjust as options for volcano axis
+    // Include gene symbol for future filters
+    pCols = pCols.filter(
+      (col) => (col.spec.name === 'pl7.app/abundance/log2foldchange'
+        || col.spec.name === 'pl7.app/abundance/minlog10padj'
+        || col.spec.name === 'pl7.app/abundance/regulationDirection')
+      && col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
+    );
+
+    // enriching with upstream data
+    const upstream = ctx.resultPool
+      .getData()
+      .entries.map((v) => v.obj)
+      .filter(isPColumn)
+      .filter((column) => column.spec.name === 'pl7.app/metadata');
+
+    return ctx.createPFrame([...pCols, ...upstream]);
+  })
+
   .sections((_ctx) => ([
     { type: 'link', href: '/', label: 'Contrast' },
-    // { type: 'link', href: '/graph', label: 'Volcano plot' },
+    { type: 'link', href: '/graph', label: 'Volcano plot' },
   ]))
 
   .done();

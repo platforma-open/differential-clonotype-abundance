@@ -23,23 +23,15 @@ import ErrorBoundary from '../components/ErrorBoundary.vue';
 
 const app = useApp();
 
-// const tableSettings = computed<PlDataTableSettings>(() => ({
-//   sourceType: 'ptable',
-//   pTable: app.model.outputs.pt,
-// }));
+const tableSettings = computed<PlDataTableSettings>(() => ({
+  sourceType: 'ptable',
+  pTable: app.model.outputs.pt,
+}));
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
 const showSettings = () => {
   settingsAreShown.value = true;
 };
-
-// Igg chain options
-// const chainOptions = computed(() => {
-//   return app.model.outputs.chainOptions?.map((v) => ({
-//     value: v.value,
-//     label: v.label,
-//   }));
-// });
 
 const covariateOptions = computed(() => {
   return app.model.outputs.metadataOptions?.map((v) => ({
@@ -69,11 +61,6 @@ const denominatorOptions = computed(() => {
 });
 
 // Generate list of comparisons with all possible numerator x denominator combinations
-// const selectedChainOptions = computed(() => {
-//   return listToOptions(app.model.args.IGChain);
-// });
-
-// Generate list of comparisons with all possible numerator x denominator combinations
 const comparisonOptions = computed(() => {
   const options: string[] = [];
   if (app.model.args.numerators.length !== 0
@@ -84,12 +71,6 @@ const comparisonOptions = computed(() => {
   }
   return listToOptions(options);
 });
-
-// watch(() => app.model.args.IGChain, (_) => {
-//   if (!app.model.ui.selectedChain && (selectedChainOptions.value.length !== 0)) {
-//     app.model.ui.selectedChain = selectedChainOptions.value[0].value;
-//   }
-// });
 
 watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
   if (!app.model.ui.comparison && (comparisonOptions.value.length !== 0)) {
@@ -124,6 +105,7 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
     <ErrorBoundary>
       <PlAgDataTable
         v-model="app.model.ui.tableState"
+        :settings="tableSettings"
         show-columns-panel
         show-export-button
       />

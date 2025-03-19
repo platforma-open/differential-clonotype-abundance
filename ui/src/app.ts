@@ -8,7 +8,7 @@ export const sdkPlugin = defineApp(model, () => {
     // defaultRoute: ,
     routes: {
       '/': () => MainPage,
-      // '/graph': () => GraphPage,
+      '/graph': () => GraphPage,
     },
   };
 });

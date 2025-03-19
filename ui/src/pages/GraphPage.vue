@@ -1,4 +1,4 @@
-<!-- <script setup lang="ts">
+<script setup lang="ts">
 import type { GraphMakerProps } from '@milaboratories/graph-maker';
 import { GraphMaker } from '@milaboratories/graph-maker';
 import '@milaboratories/graph-maker/styles';
@@ -21,28 +21,28 @@ function getDefaultOptions(topTablePcols?: PColumnIdAndSpec[]) {
   const defaults: GraphMakerProps['defaultOptions'] = [
     {
       inputName: 'x',
-      selectedSource: topTablePcols[getIndex('pl7.app/rna-seq/log2foldchange',
+      selectedSource: topTablePcols[getIndex('pl7.app/abundance/log2foldchange',
         topTablePcols)].spec,
     },
     {
       inputName: 'y',
-      selectedSource: topTablePcols[getIndex('pl7.app/rna-seq/minlog10padj',
+      selectedSource: topTablePcols[getIndex('pl7.app/abundance/minlog10padj',
         topTablePcols)].spec,
     },
     {
       inputName: 'grouping',
-      selectedSource: topTablePcols[getIndex('pl7.app/rna-seq/regulationDirection',
+      selectedSource: topTablePcols[getIndex('pl7.app/abundance/regulationDirection',
         topTablePcols)].spec,
     },
-    {
-      inputName: 'label',
-      selectedSource: topTablePcols[getIndex('pl7.app/rna-seq/genesymbol',
-        topTablePcols)].spec,
-    },
+    // {
+    //   inputName: 'label',
+    //   selectedSource: topTablePcols[getIndex('pl7.app/abundance/log2foldchange',
+    //     topTablePcols)].spec.axesSpec[0],
+    // },
     {
       inputName: 'tooltipContent',
-      selectedSource: topTablePcols[getIndex('pl7.app/rna-seq/genesymbol',
-        topTablePcols)].spec,
+      selectedSource: topTablePcols[getIndex('pl7.app/abundance/log2foldchange',
+        topTablePcols)].spec.axesSpec[0],
     },
   ];
 
@@ -90,4 +90,4 @@ watch(() => app.model.outputs.topTablePcols, (topTablePcols) => {
       />
     </template>
   </GraphMaker>
-</template> -->
+</template>

@@ -179,6 +179,10 @@ importers:
         version: 2.2.8(typescript@5.5.4)
 
   workflow:
+    dependencies:
+      '@platforma-open/milaboratories.run-deseq2-r.software':
+        specifier: workspace:*
+        version: link:../software
     devDependencies:
       '@milaboratories/software-pframes-conv':
         specifier: 'catalog:'

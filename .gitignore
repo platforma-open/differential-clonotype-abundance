@@ -8,3 +8,4 @@ log/
 .turbo
 vite.config.*.timestamp-*
 .DS_Store
+.vscode/

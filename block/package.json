@@ -28,7 +28,10 @@
       "description": "Identify differentially abundant clonotypes between conditions.",
       "longDescription": "file:../docs/description.md",
       "changelog": "file:../CHANGELOG.md",
-      "tags": ["tutorial"],
+      "tags": [
+        "airr",
+        "downstream"
+      ],
       "organization": {
         "name": "milaboratories",
         "url": "https://milaboratories.com/",

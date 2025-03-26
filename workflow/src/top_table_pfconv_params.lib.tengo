@@ -3,9 +3,9 @@ math := import("math")
 
 getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 	// Define volcano plot significant line cut points
-	thresholds := "[{\"columnId\": {\"name\": \"pl7.app/abundance/log2foldchange\",\"valueType\": \"Double\"},\"label\": \"Min LogFC (left vertical)\",\"value\": " + string(-log2FCThreshold) + "},"
-	thresholds = thresholds + "{\"columnId\": {\"name\": \"pl7.app/abundance/log2foldchange\",\"valueType\": \"Double\"},\"label\": \"Max LogFC (right vertical)\",\"value\": " + string(log2FCThreshold) + "},"
-	thresholds = thresholds + "{\"columnId\": {\"name\": \"pl7.app/abundance/minlog10padj\",\"valueType\": \"Double\"},\"label\": \"Y bound\",\"value\": " + string(-math.log10(pAdjFCThreshold)) + "}]"
+	thresholds := "[{\"columnId\": {\"name\": \"pl7.app/differentialAbundance/log2foldchange\",\"valueType\": \"Double\"},\"label\": \"Min LogFC (left vertical)\",\"value\": " + string(-log2FCThreshold) + "},"
+	thresholds = thresholds + "{\"columnId\": {\"name\": \"pl7.app/differentialAbundance/log2foldchange\",\"valueType\": \"Double\"},\"label\": \"Max LogFC (right vertical)\",\"value\": " + string(log2FCThreshold) + "},"
+	thresholds = thresholds + "{\"columnId\": {\"name\": \"pl7.app/differentialAbundance/minlog10padj\",\"valueType\": \"Double\"},\"label\": \"Y bound\",\"value\": " + string(-math.log10(pAdjFCThreshold)) + "}]"
 	
 	return {
 		"axes": [
@@ -20,7 +20,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"id": "basemean",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/basemean",
+					"name": "pl7.app/differentialAbundance/basemean",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "Base mean",
@@ -33,7 +33,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"id": "log2foldchange",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/log2foldchange",
+					"name": "pl7.app/differentialAbundance/log2foldchange",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "Log2FC",
@@ -47,7 +47,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"id": "lfcse",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/lfcse",
+					"name": "pl7.app/differentialAbundance/lfcse",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "Log2FC SE",
@@ -60,7 +60,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"id": "waldstat",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/waldstat",
+					"name": "pl7.app/differentialAbundance/waldstat",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "Stat",
@@ -73,7 +73,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"id": "pvalue",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/pvalue",
+					"name": "pl7.app/differentialAbundance/pvalue",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "P-value",
@@ -86,7 +86,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"id": "padj",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/padj",
+					"name": "pl7.app/differentialAbundance/padj",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "Adjusted p-value",
@@ -99,7 +99,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"id": "minlog10padj",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/minlog10padj",
+					"name": "pl7.app/differentialAbundance/minlog10padj",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "-log10 adjusted p-value",
@@ -111,7 +111,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				"column": "Regulation",
 				"id": "regulationDirection",
 				"spec": {
-					"name": "pl7.app/abundance/regulationDirection",
+					"name": "pl7.app/differentialAbundance/regulationDirection",
 					"valueType": "String",
 					"annotations": {
 						"pl7.app/label": "Regulation direction",

@@ -1,6 +1,7 @@
 import type { GraphMakerState } from '@milaboratories/graph-maker';
 import type {
   InferOutputsType,
+  PColumn,
   PColumnIdAndSpec,
   PFrameHandle,
   PlDataTableState,
@@ -8,8 +9,6 @@ import type {
 import {
   BlockModel,
   createPlDataTable,
-  createPlDataTableSheet,
-  getUniquePartitionKeys,
   isPColumn,
   isPColumnSpec,
 } from '@platforma-sdk/model';
@@ -27,8 +26,8 @@ export type BlockArgs = {
   contrastFactor?: PlRef;
   denominator?: string;
   numerators: string[];
-  log2FCThreshold: number;
-  pAdjFCThreshold: number;
+  log2FcThreshold: number;
+  pAdjThreshold: number;
 };
 
 export const model = BlockModel.create()
@@ -37,8 +36,8 @@ export const model = BlockModel.create()
     // IGChain: [],
     numerators: [],
     covariateRefs: [],
-    log2FCThreshold: 1,
-    pAdjFCThreshold: 0.05,
+    log2FcThreshold: 1,
+    pAdjThreshold: 0.05,
   })
 
   .withUiState<UiState>({
@@ -58,8 +57,8 @@ export const model = BlockModel.create()
 
   // Activate "Run" button only after these conditions are satisfied
   .argsValid((ctx) => (
-    (ctx.args.log2FCThreshold !== undefined)
-    && (ctx.args.pAdjFCThreshold !== undefined)
+    (ctx.args.log2FcThreshold !== undefined)
+    && (ctx.args.pAdjThreshold !== undefined)
   ))
 
   // User can only select as input UMI count matrices or read count matrices
@@ -70,12 +69,14 @@ export const model = BlockModel.create()
     // First get all UMI count dataset and their block IDs
     const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
+      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
     , { includeNativeLabel: true, addLabelAsSuffix: true });
     const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
 
     // Then get all read count datasets that don't match blockIDs from UMI counts
     let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/readCount')
+      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
     , { includeNativeLabel: true, addLabelAsSuffix: true });
     validCountOptions = validCountOptions.filter((item) =>
       !umiBlockIds.includes(item.ref.blockId));
@@ -115,7 +116,7 @@ export const model = BlockModel.create()
 
     // Filter by selected comparison
     pCols = pCols.filter(
-      (col) => col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
+      (col) => col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === ctx.uiState.comparison,
     );
 
     return createPlDataTable(ctx, pCols, ctx.uiState?.tableState);
@@ -127,13 +128,12 @@ export const model = BlockModel.create()
       return undefined;
     }
     // Allow only log2 FC and -log10 Padjust as options for volcano axis
-    // Include gene symbol for future filters
     pCols = pCols.filter(
-      (col) => (col.spec.name === 'pl7.app/abundance/log2foldchange'
-        || col.spec.name === 'pl7.app/abundance/minlog10padj'
-        || col.spec.name === 'pl7.app/abundance/regulationDirection')
+      (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
+        || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
+        || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
       // Only values associated to selected comparison
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
+      && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === ctx.uiState.comparison,
     );
 
     return pCols.map(
@@ -151,12 +151,11 @@ export const model = BlockModel.create()
       return undefined;
     }
     // Allow only log2 FC and -log10 Padjust as options for volcano axis
-    // Include gene symbol for future filters
     pCols = pCols.filter(
-      (col) => (col.spec.name === 'pl7.app/abundance/log2foldchange'
-        || col.spec.name === 'pl7.app/abundance/minlog10padj'
-        || col.spec.name === 'pl7.app/abundance/regulationDirection')
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/comparison'] === ctx.uiState.comparison,
+      (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
+        || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
+        || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
+      && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === ctx.uiState.comparison,
     );
 
     // enriching with upstream data

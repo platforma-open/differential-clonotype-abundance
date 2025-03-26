@@ -14,7 +14,7 @@ getColumns := func(countsSpec) {
 				"id": "log2foldchange",
 				"allowNA": true,
 				"spec": {
-					"name": "pl7.app/abundance/log2foldchange",
+					"name": "pl7.app/differentialAbundance/log2foldchange",
 					"valueType": "Double",
 					"annotations": {
 						"pl7.app/label": "Log2FC",
@@ -26,7 +26,7 @@ getColumns := func(countsSpec) {
 				"column": "Regulation",
 				"id": "regulationDirection",
 				"spec": {
-					"name": "pl7.app/abundance/regulationDirection",
+					"name": "pl7.app/differentialAbundance/regulationDirection",
 					"valueType": "String",
 					"annotations": {
 						"pl7.app/label": "Regulation direction",

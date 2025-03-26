@@ -128,7 +128,7 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
       <PlAccordionSection label="THRESHOLD PARAMETERS">
         <PlRow>
           <PlNumberField
-            v-model="app.model.args.log2FCThreshold"
+            v-model="app.model.args.log2FcThreshold"
             label="Log2(FC)" :minValue="0" :step="0.1"
           >
             <template #tooltip>
@@ -138,15 +138,15 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
             </template>
           </PlNumberField>
           <PlNumberField
-            v-model="app.model.args.pAdjFCThreshold"
+            v-model="app.model.args.pAdjThreshold"
             label="Adjusted p-value" :minValue="0" :maxValue="1" :step="0.01"
           />
         </PlRow>
         <!-- Add warnings if selected threshold are out of most commonly used bounds -->
-        <PlAlert v-if="app.model.args.pAdjFCThreshold > 0.05" type="warn">
+        <PlAlert v-if="app.model.args.pAdjThreshold > 0.05" type="warn">
           {{ "Warning: The selected adjusted p-value threshold is higher than the most commonly used 0.05" }}
         </PlAlert>
-        <PlAlert v-if="app.model.args.log2FCThreshold < 0.6" type="warn">
+        <PlAlert v-if="app.model.args.log2FcThreshold < 0.6" type="warn">
           {{ "Warning: The selected Log2(FC) threshold may be too low for most use cases" }}
         </PlAlert>
       </PlAccordionSection>

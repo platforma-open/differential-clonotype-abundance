@@ -5,9 +5,8 @@ assets:= import("@platforma-sdk/workflow-tengo:assets")
 xsv := import("@platforma-sdk/workflow-tengo:pframes.xsv")
 pframes := import("@platforma-sdk/workflow-tengo:pframes")
 pSpec := import("@platforma-sdk/workflow-tengo:pframes.spec")
-topTablePfconvParamsLib := import(":topTablePfconvParams")
-DCAPfconvParamsLib := import(":DCAPfconvParams")
-
+topTablePfconvParamsLib := import(":top_table_pfconv_params")
+dcaPfconvParamsLib := import(":dca_pfconv_params")
 
 wf.prepare(func(args){
 
@@ -35,8 +34,8 @@ wf.body(func(args) {
 
 	contrastFactor := args.resolvedContrastFactor
 	denominator := args.denominator
-	log2FCThreshold := args.log2FCThreshold
-	pAdjFCThreshold := args.pAdjFCThreshold
+	log2FcThreshold := args.log2FcThreshold
+	pAdjThreshold := args.pAdjThreshold
 
 	covariates := []
 	for _, v in args.metaRefs {
@@ -47,9 +46,9 @@ wf.body(func(args) {
 	csvCounts := xsv.exportFrame([allCounts], "csv", {})
 	csvCovariates := xsv.exportFrame(covariates, "csv", {})
 
-	degPFrameBuilder := pframes.pFrameBuilder()
-	regDirPFrameBuilder := pframes.pFrameBuilder()
-	topDegPFrameBuilder := pframes.pFrameBuilder()
+	degPframeBuilder := pframes.pFrameBuilder()
+	regDirPframeBuilder := pframes.pFrameBuilder()
+	topDegPframeBuilder := pframes.pFrameBuilder()
 
 	for numerator in args.numerators {
 		diffAbundance := exec.builder().
@@ -60,8 +59,8 @@ wf.body(func(args) {
 				arg("-n").arg(string(numerator)).
 				arg("-d").arg(string(denominator)).
 				arg("-o").arg("topTable.csv").
-				arg("-f").arg(string(log2FCThreshold)).
-				arg("-p").arg(string(pAdjFCThreshold)).
+				arg("-f").arg(string(log2FcThreshold)).
+				arg("-p").arg(string(pAdjThreshold)).
 				arg("--values_column").arg(countsSpec.annotations["pl7.app/label"]).
 				arg("--IDs_column").arg(countsSpec.axesSpec[1].annotations["pl7.app/label"]).
 				arg("--min_counts").arg("1").
@@ -78,27 +77,27 @@ wf.body(func(args) {
 				run()
 				
 		topTableImportParams := topTablePfconvParamsLib.getColumns(countsSpec,
-																   log2FCThreshold,
-																   pAdjFCThreshold)
+																   log2FcThreshold,
+																   pAdjThreshold)
 		topTablePf := xsv.importFile(diffAbundance.getFile("topTable.csv"), "csv", topTableImportParams, 
 															// This changes output format from default to per column
 															// So key will be column name and values spec and data
 															{splitDataAndSpec: true})
 
 		// Add DEG export with specific import params. Adding new csv output to script with only DEGs and logFC
-		DEGImportParams := DCAPfconvParamsLib.getColumns(countsSpec)
-		DEGPf := xsv.importFile(diffAbundance.getFile("DEG.csv"), "csv", DEGImportParams)
+		degImportParams := dcaPfconvParamsLib.getColumns(countsSpec)
+		DegPf := xsv.importFile(diffAbundance.getFile("DEG.csv"), "csv", degImportParams)
 
 		trace := pSpec.makeTrace(countsSpec,
 			{type: "milaboratories.differential-clonotype-abundance", id: blockId, importance: 30, 
-			label: "DCA - " + numerator + "/" + denominator + " (log2FC: " + log2FCThreshold + ", pAdj: " + pAdjFCThreshold + ")"}
+			label: "DCA - " + numerator + "/" + denominator + " (log2FC: " + log2FcThreshold + ", pAdj: " + pAdjThreshold + ")"}
 		)
 
 		for columnName, value in topTablePf { 
 			columnSpec := value.spec
-			columnSpec.axesSpec[0].domain["pl7.app/comparison"] = numerator + " - vs - " + denominator
+			columnSpec.axesSpec[0].domain["pl7.app/differentialAbundance/comparison"] = numerator + " - vs - " + denominator
 			columnData := value.data
-			topDegPFrameBuilder.add(
+			topDegPframeBuilder.add(
 				numerator + " - " + columnName,
 				trace.inject(columnSpec),
 				columnData
@@ -106,11 +105,11 @@ wf.body(func(args) {
 			)
 		}
 
-		degPFrameBuilder.add(
+		degPframeBuilder.add(
 			numerator,
 			trace.inject({
 				kind: "PColumn",
-				name: "pl7.app/abundance/DCA",
+				name: "pl7.app/differentialAbundance/DCA",
 				domain: {
 					"pl7.app/blockId": blockId
 				},
@@ -120,29 +119,21 @@ wf.body(func(args) {
 					"pl7.app/table/hValue": "true",
 					// This allows us to select this Pcolumn to use it as filtering
 					// in this case to keep only genes appearing in this list
-					"pl7.app/isSubset": "true"
+					"pl7.app/isSubset": "true",
+					"pl7.app/isAbundance": "true"
 				},
 				axesSpec: [
-					{
-						"name": "pl7.app/vdj/clonotypeKey",
-						"type": "String",
-						"domain": {
-							"pl7.app/vdj/clonotypeKey/structure": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypeKey/structure"]
-						},
-						"annotations": {
-							"pl7.app/label": "Clonotype key"
-						}
-					}
+					countsSpec.axesSpec[1]
 					]
 			}),
-			DEGPf["log2foldchange.data"]
+			DegPf["log2foldchange.data"]
 		)
 
-		regDirPFrameBuilder.add(
+		regDirPframeBuilder.add(
 			numerator,
 			trace.inject({
 				kind: "PColumn",
-				name: "pl7.app/abundance/regulationDirection",
+				name: "pl7.app/differentialAbundance/regulationDirection",
 				domain: {
 					"pl7.app/blockId": blockId
 				},
@@ -152,34 +143,25 @@ wf.body(func(args) {
 
 				},
 				axesSpec: [
-					{
-						"name": "pl7.app/vdj/clonotypeKey",
-						"type": "String",
-						"domain": {
-							"pl7.app/vdj/clonotypeKey/structure": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypeKey/structure"]
-						},
-						"annotations": {
-							"pl7.app/label": "Clonotype key"
-						}
-					}
+					countsSpec.axesSpec[1]
 					]
 			}),
-			DEGPf["regulationDirection.data"]
+			DegPf["regulationDirection.data"]
 		)
 	}
 
 	// Build the final PFrames
-	degPF := degPFrameBuilder.build()
-	topDegPF := topDegPFrameBuilder.build()
-	regDirPF := regDirPFrameBuilder.build()
+	degPf := degPframeBuilder.build()
+	topDegPf := topDegPframeBuilder.build()
+	regDirPf := regDirPframeBuilder.build()
 	exports := {
-		DEG: degPF,
-		regDir: regDirPF
+		DEG: degPf,
+		regDir: regDirPf
 	}
 
 	return {
 		outputs: {
-			topTablePf: pframes.exportFrame(topDegPF)
+			topTablePf: pframes.exportFrame(topDegPf)
 		},
 		exports: exports
 	}

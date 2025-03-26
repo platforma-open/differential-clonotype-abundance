@@ -21,27 +21,27 @@ function getDefaultOptions(topTablePcols?: PColumnIdAndSpec[]) {
   const defaults: GraphMakerProps['defaultOptions'] = [
     {
       inputName: 'x',
-      selectedSource: topTablePcols[getIndex('pl7.app/abundance/log2foldchange',
+      selectedSource: topTablePcols[getIndex('pl7.app/differentialAbundance/log2foldchange',
         topTablePcols)].spec,
     },
     {
       inputName: 'y',
-      selectedSource: topTablePcols[getIndex('pl7.app/abundance/minlog10padj',
+      selectedSource: topTablePcols[getIndex('pl7.app/differentialAbundance/minlog10padj',
         topTablePcols)].spec,
     },
     {
       inputName: 'grouping',
-      selectedSource: topTablePcols[getIndex('pl7.app/abundance/regulationDirection',
+      selectedSource: topTablePcols[getIndex('pl7.app/differentialAbundance/regulationDirection',
         topTablePcols)].spec,
     },
     // {
     //   inputName: 'label',
-    //   selectedSource: topTablePcols[getIndex('pl7.app/abundance/log2foldchange',
+    //   selectedSource: topTablePcols[getIndex('pl7.app/differentialAbundance/log2foldchange',
     //     topTablePcols)].spec.axesSpec[0],
     // },
     {
       inputName: 'tooltipContent',
-      selectedSource: topTablePcols[getIndex('pl7.app/abundance/log2foldchange',
+      selectedSource: topTablePcols[getIndex('pl7.app/differentialAbundance/log2foldchange',
         topTablePcols)].spec.axesSpec[0],
     },
   ];

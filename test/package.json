@@ -1,0 +1,20 @@
+{
+  "name": "@platforma-open/milaboratories.differential-clonotype-abundance.test",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Block tests",
+  "type": "module",
+  "scripts": {
+    "test": "vitest --passWithNoTests"
+  },
+  "files": [],
+  "keywords": [],
+  "dependencies": {
+    "this-block": "workspace:@platforma-open/milaboratories.differential-clonotype-abundance@*"
+  },
+  "devDependencies": {
+    "@platforma-sdk/test": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

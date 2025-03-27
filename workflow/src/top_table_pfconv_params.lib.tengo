@@ -1,0 +1,132 @@
+ll := import("@platforma-sdk/workflow-tengo:ll")
+math := import("math")
+
+getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
+	// Define volcano plot significant line cut points
+	thresholds := "[{\"columnId\": {\"name\": \"pl7.app/differentialAbundance/log2foldchange\",\"valueType\": \"Double\"},\"label\": \"Min LogFC (left vertical)\",\"value\": " + string(-log2FCThreshold) + "},"
+	thresholds = thresholds + "{\"columnId\": {\"name\": \"pl7.app/differentialAbundance/log2foldchange\",\"valueType\": \"Double\"},\"label\": \"Max LogFC (right vertical)\",\"value\": " + string(log2FCThreshold) + "},"
+	thresholds = thresholds + "{\"columnId\": {\"name\": \"pl7.app/differentialAbundance/minlog10padj\",\"valueType\": \"Double\"},\"label\": \"Y bound\",\"value\": " + string(-math.log10(pAdjFCThreshold)) + "}]"
+	
+	return {
+		"axes": [
+			{
+				"column": "Clonotype key",
+				"spec": countsSpec.axesSpec[1]
+			}
+			],
+		"columns": [
+			{
+				"column": "baseMean",
+				"id": "basemean",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/basemean",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "Base mean",
+						"pl7.app/table/orderPriority": "70"
+					}
+				}
+			},
+			{
+				"column": "log2FoldChange",
+				"id": "log2foldchange",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/log2foldchange",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "Log2FC",
+						"pl7.app/table/orderPriority": "60",
+						"pl7.app/graph/axis/symmetricRange": "0"
+					}
+				}
+			},
+			{
+				"column": "lfcSE",
+				"id": "lfcse",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/lfcse",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "Log2FC SE",
+						"pl7.app/table/orderPriority": "50"
+					}
+				}
+			},
+			{
+				"column": "stat",
+				"id": "waldstat",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/waldstat",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "Stat",
+						"pl7.app/table/orderPriority": "40"
+					}
+				}
+			},
+			{
+				"column": "pvalue",
+				"id": "pvalue",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/pvalue",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "P-value",
+						"pl7.app/table/orderPriority": "30"
+					}
+				}
+			},
+			{
+				"column": "padj",
+				"id": "padj",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/padj",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "Adjusted p-value",
+						"pl7.app/table/orderPriority": "20"
+					}
+				}
+			},
+			{
+				"column": "minlog10padj",
+				"id": "minlog10padj",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/minlog10padj",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": "-log10 adjusted p-value",
+						"pl7.app/table/orderPriority": "10"
+					}
+				}
+			},
+			{
+				"column": "Regulation",
+				"id": "regulationDirection",
+				"spec": {
+					"name": "pl7.app/differentialAbundance/regulationDirection",
+					"valueType": "String",
+					"annotations": {
+						"pl7.app/label": "Regulation direction",
+						"pl7.app/graph/palette": "{\"name\":\"triadic\",\"mapping\":{\"Up\":\"19\",\"Down\":\"22\",\"NS\":\"25\"}}",
+						"pl7.app/graph/thresholds": thresholds,
+						"pl7.app/table/orderPriority": "5"
+					}
+				}
+			}
+			],
+		"storageFormat": "Binary",
+		"partitionKeyLength": 0
+	}
+}
+
+export ll.toStrict({
+	getColumns: getColumns
+})

@@ -5,7 +5,10 @@
     "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json,vue}\"",
     "build": "turbo run build",
     "test": "turbo run test --concurrency 1",
+    "mark-stable": "turbo run mark-stable",
     "watch": "turbo watch build",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
     "lint": "pnpm -r lint"
   },
   "files": [

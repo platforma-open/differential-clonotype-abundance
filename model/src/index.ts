@@ -5,7 +5,8 @@ import type {
   PColumnIdAndSpec,
   PFrameHandle,
   PlDataTableState,
-  PlRef } from '@platforma-sdk/model';
+  PlRef,
+  TreeNodeAccessor } from '@platforma-sdk/model';
 import {
   BlockModel,
   createPlDataTable,
@@ -29,6 +30,21 @@ export type BlockArgs = {
   log2FcThreshold: number;
   pAdjThreshold: number;
 };
+
+// get main Pcols for plot and tables
+function filterPcols(pCols: PColumn<TreeNodeAccessor>[],
+  comparison: string | undefined):
+  PColumn<TreeNodeAccessor>[] {
+  // Allow only log2 FC and -log10 Padjust as options for volcano axis
+  pCols = pCols.filter(
+    (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
+      || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
+      || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
+    // Only values associated to selected comparison
+    && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === comparison,
+  );
+  return pCols;
+}
 
 export const model = BlockModel.create()
 
@@ -127,14 +143,7 @@ export const model = BlockModel.create()
     if (pCols === undefined) {
       return undefined;
     }
-    // Allow only log2 FC and -log10 Padjust as options for volcano axis
-    pCols = pCols.filter(
-      (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
-        || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
-        || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
-      // Only values associated to selected comparison
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === ctx.uiState.comparison,
-    );
+    pCols = filterPcols(pCols, ctx.uiState.comparison);
 
     return pCols.map(
       (c) =>
@@ -150,13 +159,7 @@ export const model = BlockModel.create()
     if (pCols === undefined) {
       return undefined;
     }
-    // Allow only log2 FC and -log10 Padjust as options for volcano axis
-    pCols = pCols.filter(
-      (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
-        || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
-        || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === ctx.uiState.comparison,
-    );
+    pCols = filterPcols(pCols, ctx.uiState.comparison);
 
     // enriching with upstream data
     const upstream = ctx.resultPool

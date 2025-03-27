@@ -20,7 +20,7 @@ catalog:
   "@milaboratories/graph-maker": ^1.1.55
   "@platforma-open/milaboratories.runenv-python-3": ^1.1.7
   "@platforma-open/milaboratories.software-small-binaries": ^1.15.16
-  '@platforma-open/milaboratories.runenv-r-differential-expression': ^1.0.7
+  '@platforma-open/milaboratories.runenv-r-differential-expression': ^1.0.6
   "@platforma-open/milaboratories.runenv-r": ^1.2.18
   "@milaboratories/software-pframes-conv": ^2.1.16
   

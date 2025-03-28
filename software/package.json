@@ -5,8 +5,10 @@
   "description": "Block Software: Run DESeq2 with R",
   "scripts": {
     "build": "pl-pkg build",
-    "test": "true",
-    "prepublishOnly": "pl-pkg publish"
+    "prepublishOnly": "pl-pkg publish packages",
+    "do-pack": "rm -f *.tgz && pl-pkg build && pnpm pack && mv platforma-open*.tgz package.tgz",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
   },
   "block-software": {
     "entrypoints": {

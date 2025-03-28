@@ -180,7 +180,7 @@ importers:
 
   workflow:
     dependencies:
-      '@platforma-open/milaboratories.run-deseq2-r.software':
+      '@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software':
         specifier: workspace:*
         version: link:../software
     devDependencies:

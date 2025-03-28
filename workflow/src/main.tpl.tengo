@@ -53,7 +53,7 @@ wf.body(func(args) {
 	for numerator in args.numerators {
 		numerator = string(numerator)
 		diffAbundance := exec.builder().
-				software(assets.importSoftware("@platforma-open/milaboratories.run-deseq2-r.software:main")).
+				software(assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:main")).
 				arg("-c").arg("rawCounts.csv").
 				arg("-m").arg("covariates.csv").
 				arg("-t").arg(contrastFactor.spec.annotations["pl7.app/label"]). 

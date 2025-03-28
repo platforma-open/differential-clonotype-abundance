@@ -1,5 +1,5 @@
 {
-  "name": "@platforma-open/milaboratories.run-deseq2-r.software",
+  "name": "@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software",
   "version": "1.6.0",
   "type": "module",
   "description": "Block Software: Run DESeq2 with R",

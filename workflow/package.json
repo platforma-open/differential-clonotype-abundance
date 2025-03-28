@@ -9,7 +9,7 @@
     "format": "/usr/bin/env emacs --script ./format.el"
   },
   "dependencies": {
-    "@platforma-open/milaboratories.run-deseq2-r.software": "workspace:*"
+    "@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software": "workspace:*"
   },
   "devDependencies": {
     "@platforma-sdk/tengo-builder": "catalog:",

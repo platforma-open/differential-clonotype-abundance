@@ -65,7 +65,7 @@ export const model = BlockModel.create()
       },
     },
     graphState: {
-      title: 'Differential gene expression',
+      title: 'Differential clonotype abundance',
       template: 'dots',
       currentTab: null,
     },

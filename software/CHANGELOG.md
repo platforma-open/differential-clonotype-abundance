@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.8.0
+
+### Minor Changes
+
+- 8aa6e8f: zero counts to one after clonotype filtering
+
 ## 1.7.0
 
 ### Minor Changes

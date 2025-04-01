@@ -87,7 +87,11 @@ count_matrix[is.na(count_matrix)] <- 0
 min_samples <- max(floor(ncol(count_matrix) * filter_fraction), 1)
 count_matrix <- count_matrix[rowSums(count_matrix >= min_counts) >= min_samples, ]
 
+# For differentialclonotype abundance we add 1 as minimum clonotype count (after filtering)
+count_matrix <- replace(count_matrix, count_matrix == 0, 1)
+
 # Prepare DESeq2 dataset
+set.seed(42)
 dds <- DESeqDataSetFromMatrix(
   countData = count_matrix,
   colData = metadata,

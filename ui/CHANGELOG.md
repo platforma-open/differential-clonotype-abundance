@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.6.2
+
+### Patch Changes
+
+- 14395d2: update graph-maker version
+
 ## 1.6.1
 
 ### Patch Changes

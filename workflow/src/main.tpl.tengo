@@ -95,7 +95,7 @@ wf.body(func(args) {
 		)
 
 		for columnName, value in topTablePf { 
-			columnSpec := value.spec
+			columnSpec := copy(value.spec)
 			columnSpec.axesSpec[0].domain["pl7.app/differentialAbundance/comparison"] = numerator + " - vs - " + denominator
 			columnData := value.data
 			topDegPframeBuilder.add(
@@ -112,16 +112,14 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/DCA",
 				domain: {
-					"pl7.app/blockId": blockId
+					"pl7.app/vdj/clonotypingRunId": countsSpec.domain["pl7.app/vdj/clonotypingRunId"]
 				},
 				valueType: "Double",
 				annotations: {
 					"pl7.app/label": numerator + " vs " + denominator + " (log2FC)",
-					"pl7.app/table/hValue": "true",
-					// This allows us to select this Pcolumn to use it as filtering
-					// in this case to keep only genes appearing in this list
-					"pl7.app/isSubset": "true",
-					"pl7.app/isAbundance": "true"
+					"pl7.app/isAbundance": "true",
+					"pl7.app/table/visibility": "default",
+					"pl7.app/table/orderPriority": "85000"
 				},
 				axesSpec: [
 					countsSpec.axesSpec[1]
@@ -136,11 +134,14 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/regulationDirection",
 				domain: {
-					"pl7.app/blockId": blockId
+					"pl7.app/vdj/clonotypingRunId": countsSpec.domain["pl7.app/vdj/clonotypingRunId"]
 				},
 				valueType: "String",
 				annotations: {
-					"pl7.app/label": numerator + " vs " + denominator + " (UP\\Down-regulated clonotype list)"
+					"pl7.app/label": numerator + " vs " + denominator + " (UP\\Down-regulated clonotype list)",
+					"pl7.app/isAbundance": "true",
+					"pl7.app/table/visibility": "optional",
+					"pl7.app/table/orderPriority": "84000"
 
 				},
 				axesSpec: [

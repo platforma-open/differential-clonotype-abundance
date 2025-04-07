@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 1.3.0
+
+### Minor Changes
+
+- f5906a3: Make Pcolumn available in following blocks
+
 ## 1.2.1
 
 ### Patch Changes

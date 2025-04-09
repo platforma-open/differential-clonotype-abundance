@@ -37,6 +37,16 @@ wf.body(func(args) {
 	log2FcThreshold := args.log2FcThreshold
 	pAdjThreshold := args.pAdjThreshold
 
+	// Get clonotypingRunId
+	// New version
+	clonotypingRunId := countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
+	//Old version
+	// @TODO: remove it when old version gets obsolete
+	if clonotypingRunId == undefined {
+		clonotypingRunId = countsSpec.domain["pl7.app/vdj/clonotypingRunId"]
+	}
+	
+
 	covariates := []
 	for _, v in args.metaRefs {
 		covariates = append(covariates, v)
@@ -112,7 +122,7 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/DCA",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.domain["pl7.app/vdj/clonotypingRunId"]
+					"pl7.app/vdj/clonotypingRunId": clonotypingRunId
 				},
 				valueType: "Double",
 				annotations: {
@@ -134,7 +144,7 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/regulationDirection",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.domain["pl7.app/vdj/clonotypingRunId"]
+					"pl7.app/vdj/clonotypingRunId": clonotypingRunId
 				},
 				valueType: "String",
 				annotations: {

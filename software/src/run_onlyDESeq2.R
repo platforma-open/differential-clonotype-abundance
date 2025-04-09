@@ -73,7 +73,7 @@ colnames(metadata) <- make.names(colnames(metadata))
 
 # Transform long format to wide format
 count_matrix <- count_long %>%
-  pivot_wider(names_from = Sample, values_from = values_col) %>%
+  pivot_wider(names_from = Sample, values_from = all_of(values_col)) %>%
   as.data.frame()
 
 # Set Id columns as row name and remove it
@@ -88,7 +88,8 @@ min_samples <- max(floor(ncol(count_matrix) * filter_fraction), 1)
 count_matrix <- count_matrix[rowSums(count_matrix >= min_counts) >= min_samples, ]
 
 # For differentialclonotype abundance we add 1 as minimum clonotype count (after filtering)
-count_matrix <- replace(count_matrix, count_matrix == 0, 1)
+# count_matrix <- replace(count_matrix, count_matrix == 0, 1)
+count_matrix <- count_matrix + 1
 
 # Prepare DESeq2 dataset
 set.seed(42)

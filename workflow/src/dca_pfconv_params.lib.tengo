@@ -4,7 +4,7 @@ getColumns := func(countsSpec) {
 	return {
 		"axes": [
 			{
-				"column": "Clonotype key",
+				"column": countsSpec.axesSpec[1].annotations["pl7.app/label"],
 				"spec": countsSpec.axesSpec[1]
 			}
 			],

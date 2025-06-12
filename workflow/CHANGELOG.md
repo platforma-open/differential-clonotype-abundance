@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.0.0
+
+### Major Changes
+
+- 90495a7: chore: update deps
+
 ## 1.3.0
 
 ### Minor Changes

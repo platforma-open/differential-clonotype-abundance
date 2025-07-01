@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.2.0
+
+### Minor Changes
+
+- 9e8fa32: allow prepare venv on Windows
+
 ## 1.1.6
 
 ### Patch Changes

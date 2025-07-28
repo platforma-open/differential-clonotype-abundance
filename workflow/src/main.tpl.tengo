@@ -112,7 +112,7 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/DCA",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.domain["pl7.app/vdj/clonotypingRunId"]
+					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
 				},
 				valueType: "Double",
 				annotations: {
@@ -134,7 +134,7 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/regulationDirection",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.domain["pl7.app/vdj/clonotypingRunId"]
+					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
 				},
 				valueType: "String",
 				annotations: {

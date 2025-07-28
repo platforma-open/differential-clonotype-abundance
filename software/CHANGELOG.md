@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.9.0
+
+### Minor Changes
+
+- 349f6fb: Updated block to capture correctly specs in latest MiXCR clonotyping exports.
+
 ## 1.8.0
 
 ### Minor Changes

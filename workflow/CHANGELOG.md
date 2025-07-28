@@ -1,5 +1,16 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.1.0
+
+### Minor Changes
+
+- 349f6fb: Updated block to capture correctly specs in latest MiXCR clonotyping exports.
+
+### Patch Changes
+
+- Updated dependencies [349f6fb]
+  - @platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software@1.9.0
+
 ## 2.0.0
 
 ### Major Changes

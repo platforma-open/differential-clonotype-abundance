@@ -44,6 +44,22 @@ option_list <- list(
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 
+# Print passed arguments for debugging
+cat("--- Script Arguments ---\n")
+cat("Count matrix path:", opt$count_matrix, "\n")
+cat("Metadata path:", opt$metadata, "\n")
+cat("Contrast factor column:", opt$contrast_factor, "\n")
+cat("Numerator:", opt$numerator, "\n")
+cat("Denominator:", opt$denominator, "\n")
+cat("Output file:", opt$output, "\n")
+cat("Log2 Fold Change Threshold:", opt$fc_threshold, "\n")
+cat("Adjusted P-value Threshold:", opt$p_threshold, "\n")
+cat("Values column name:", opt$values_column, "\n")
+cat("IDs column name:", opt$IDs_column, "\n")
+cat("Minimum counts filter:", opt$min_counts, "\n")
+cat("Sample fraction for filter:", opt$fraction_for_filter, "\n")
+cat("------------------------\n\n")
+
 if (is.null(opt$count_matrix) || is.null(opt$metadata) || is.null(opt$contrast_factor) || is.null(opt$numerator) || is.null(opt$denominator)) {
   stop("Missing required arguments")
 }

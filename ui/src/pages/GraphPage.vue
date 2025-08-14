@@ -71,7 +71,7 @@ const comparisonOptions = computed(() => {
     :data-state-key="app.model.args.countsRef"
     chartType="scatterplot-umap"
     :p-frame="app.model.outputs.topTablePf"
-    :fixed-options="defaults"
+    :default-options="defaults"
   >
     <template #titleLineSlot>
       <PlDropdown

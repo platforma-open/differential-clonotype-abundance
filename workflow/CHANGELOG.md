@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.2.0
+
+### Minor Changes
+
+- b181695: Various fixes
+
 ## 2.1.0
 
 ### Minor Changes

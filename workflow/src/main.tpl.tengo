@@ -93,10 +93,12 @@ wf.body(func(args) {
 			{type: "milaboratories.differential-clonotype-abundance", id: blockId, importance: 30, 
 			label: "DCA - " + numerator + "/" + denominator + " (log2FC: " + log2FcThreshold + ", pAdj: " + pAdjThreshold + ")"}
 		)
+		
+		comparison := numerator + " - vs - " + denominator
 
 		for columnName, value in topTablePf { 
 			columnSpec := copy(value.spec)
-			columnSpec.axesSpec[0].domain["pl7.app/differentialAbundance/comparison"] = numerator + " - vs - " + denominator
+			columnSpec.axesSpec[0].domain["pl7.app/differentialAbundance/comparison"] = comparison
 			columnData := value.data
 			topDegPframeBuilder.add(
 				numerator + " - " + columnName,
@@ -112,11 +114,12 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/DCA",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
+					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"],
+					"pl7.app/differentialAbundance/comparison": comparison
 				},
 				valueType: "Double",
 				annotations: {
-					"pl7.app/label": numerator + " vs " + denominator + " (log2FC)",
+					"pl7.app/label": comparison + " (log2FC)",
 					"pl7.app/isAbundance": "true",
 					"pl7.app/table/visibility": "default",
 					"pl7.app/table/orderPriority": "85000"
@@ -134,11 +137,12 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/regulationDirection",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
+					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"],
+					"pl7.app/differentialAbundance/comparison": comparison
 				},
 				valueType: "String",
 				annotations: {
-					"pl7.app/label": numerator + " vs " + denominator + " (UP\\Down-regulated clonotype list)",
+					"pl7.app/label": comparison + " (UP\\Down-regulated clonotype list)",
 					"pl7.app/isAbundance": "true",
 					"pl7.app/table/visibility": "optional",
 					"pl7.app/table/orderPriority": "84000"

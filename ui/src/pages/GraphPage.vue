@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { GraphMakerProps } from '@milaboratories/graph-maker';
+import type { PredefinedGraphOption } from '@milaboratories/graph-maker';
 import { GraphMaker } from '@milaboratories/graph-maker';
 import '@milaboratories/graph-maker/styles';
-import { useApp } from '../app';
-import { computed, ref, watch } from 'vue';
-import { listToOptions, PlDropdown } from '@platforma-sdk/ui-vue';
 import type { PColumnIdAndSpec } from '@platforma-sdk/model';
+import { listToOptions, PlDropdown } from '@platforma-sdk/ui-vue';
+import { computed } from 'vue';
+import { useApp } from '../app';
 
 const app = useApp();
 
@@ -18,7 +18,7 @@ function getDefaultOptions(topTablePcols?: PColumnIdAndSpec[]) {
     return pcols.findIndex((p) => p.spec.name === name);
   }
 
-  const defaults: GraphMakerProps['defaultOptions'] = [
+  const defaults: PredefinedGraphOption<'scatterplot-umap'>[] = [
     {
       inputName: 'x',
       selectedSource: topTablePcols[getIndex('pl7.app/differentialAbundance/log2foldchange',
@@ -49,6 +49,8 @@ function getDefaultOptions(topTablePcols?: PColumnIdAndSpec[]) {
   return defaults;
 }
 
+const defaults = computed(() => getDefaultOptions(app.model.outputs.topTablePcols));
+
 // Generate list of comparisons with all possible numerator x denominator combinations
 const comparisonOptions = computed(() => {
   const options: string[] = [];
@@ -61,27 +63,15 @@ const comparisonOptions = computed(() => {
   return listToOptions(options);
 });
 
-// Steps needed to reset graph maker after changing input table
-const defaultOptions = ref(getDefaultOptions(app.model.outputs.topTablePcols));
-const key = ref(defaultOptions.value ? JSON.stringify(defaultOptions.value) : '');
-// Reset graph maker state to allow new selection of defaults
-watch(() => app.model.outputs.topTablePcols, (topTablePcols) => {
-  delete app.model.ui.graphState.optionsState;
-  defaultOptions.value = getDefaultOptions(topTablePcols);
-  key.value = defaultOptions.value ? JSON.stringify(defaultOptions.value) : '';
-},
-// immediate - to trigger first time before first change
-// deep - for objects of complicated structure
-{ deep: false, immediate: false },
-);
-
 </script>
 
 <template>
   <GraphMaker
-    :key="key"
-    v-model="app.model.ui.graphState" chartType="scatterplot-umap"
-    :p-frame="app.model.outputs.topTablePf" :defaultOptions="defaultOptions"
+    v-model="app.model.ui.graphState"
+    :data-state-key="app.model.args.countsRef"
+    chartType="scatterplot-umap"
+    :p-frame="app.model.outputs.topTablePf"
+    :default-options="defaults"
   >
     <template #titleLineSlot>
       <PlDropdown

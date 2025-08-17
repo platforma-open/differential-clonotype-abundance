@@ -1,21 +1,19 @@
 <script setup lang="ts">
-import type {
-  PlDataTableSettings } from '@platforma-sdk/ui-vue';
 import {
   listToOptions,
-  PlAgDataTable,
-  PlAgDataTableToolsPanel,
+  PlAccordionSection,
+  PlAgDataTableV2,
+  PlAlert,
   PlBlockPage,
   PlBtnGhost,
   PlDropdown,
   PlDropdownMulti,
   PlDropdownRef,
   PlMaskIcon24,
-  PlSlideModal,
-  PlAccordionSection,
   PlNumberField,
   PlRow,
-  PlAlert,
+  PlSlideModal,
+  usePlDataTableSettingsV2,
 } from '@platforma-sdk/ui-vue';
 import { computed, ref, watch } from 'vue';
 import { useApp } from '../app';
@@ -23,10 +21,10 @@ import ErrorBoundary from '../components/ErrorBoundary.vue';
 
 const app = useApp();
 
-const tableSettings = computed<PlDataTableSettings>(() => ({
-  sourceType: 'ptable',
-  pTable: app.model.outputs.pt,
-}));
+const tableSettings = usePlDataTableSettingsV2({
+  sourceId: () => app.model.args.countsRef,
+  model: () => app.model.outputs.pt,
+});
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
 const showSettings = () => {
@@ -93,8 +91,6 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
           Select the specific Numerator - vs - Denominator comparison to be shown in table and plots
         </template>
       </PlDropdown>
-      <!-- PlAgDataTableToolsPanel controls showing  Export column and filter-->
-      <PlAgDataTableToolsPanel/>
       <PlBtnGhost @click.stop="showSettings">
         Settings
         <template #append>
@@ -103,11 +99,12 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
       </PlBtnGhost>
     </template>
     <ErrorBoundary>
-      <PlAgDataTable
+      <PlAgDataTableV2
         v-model="app.model.ui.tableState"
         :settings="tableSettings"
         show-columns-panel
         show-export-button
+        disable-filters-panel
       />
     </ErrorBoundary>
     <PlSlideModal v-model="settingsAreShown">

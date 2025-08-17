@@ -4,18 +4,20 @@ import type {
   PColumn,
   PColumnIdAndSpec,
   PFrameHandle,
-  PlDataTableState,
+  PlDataTableStateV2,
   PlRef,
-  TreeNodeAccessor } from '@platforma-sdk/model';
+  TreeNodeAccessor,
+} from '@platforma-sdk/model';
 import {
   BlockModel,
-  createPlDataTable,
-  isPColumn,
+  createPFrameForGraphs,
+  createPlDataTableStateV2,
+  createPlDataTableV2,
   isPColumnSpec,
 } from '@platforma-sdk/model';
 
 export type UiState = {
-  tableState: PlDataTableState;
+  tableState: PlDataTableStateV2;
   graphState: GraphMakerState;
   selectedChain?: string;
   comparison?: string;
@@ -32,7 +34,8 @@ export type BlockArgs = {
 };
 
 // get main Pcols for plot and tables
-function filterPcols(pCols: PColumn<TreeNodeAccessor>[],
+function filterPCols(
+  pCols: PColumn<TreeNodeAccessor>[],
   comparison: string | undefined):
   PColumn<TreeNodeAccessor>[] {
   // Allow only log2 FC and -log10 Padjust as options for volcano axis
@@ -57,13 +60,7 @@ export const model = BlockModel.create()
   })
 
   .withUiState<UiState>({
-    tableState: {
-      gridState: {},
-      pTableParams: {
-        sorting: [],
-        filters: [],
-      },
-    },
+    tableState: createPlDataTableStateV2(),
     graphState: {
       title: 'Differential clonotype abundance',
       template: 'dots',
@@ -141,7 +138,18 @@ export const model = BlockModel.create()
       (col) => col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === ctx.uiState.comparison,
     );
 
-    return createPlDataTable(ctx, pCols, ctx.uiState?.tableState);
+    return createPlDataTableV2(ctx, pCols, ctx.uiState?.tableState);
+  })
+
+  .output('topTablePf', (ctx): PFrameHandle | undefined => {
+    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (pCols === undefined) {
+      return undefined;
+    }
+
+    pCols = filterPCols(pCols, ctx.uiState.comparison);
+
+    return createPFrameForGraphs(ctx, pCols);
   })
 
   .output('topTablePcols', (ctx) => {
@@ -149,7 +157,7 @@ export const model = BlockModel.create()
     if (pCols === undefined) {
       return undefined;
     }
-    pCols = filterPcols(pCols, ctx.uiState.comparison);
+    pCols = filterPCols(pCols, ctx.uiState.comparison);
 
     return pCols.map(
       (c) =>
@@ -158,23 +166,6 @@ export const model = BlockModel.create()
           spec: c.spec,
         } satisfies PColumnIdAndSpec),
     );
-  })
-
-  .output('topTablePf', (ctx): PFrameHandle | undefined => {
-    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
-    if (pCols === undefined) {
-      return undefined;
-    }
-    pCols = filterPcols(pCols, ctx.uiState.comparison);
-
-    // enriching with upstream data
-    const upstream = ctx.resultPool
-      .getData()
-      .entries.map((v) => v.obj)
-      .filter(isPColumn)
-      .filter((column) => column.spec.name === 'pl7.app/metadata');
-
-    return ctx.createPFrame([...pCols, ...upstream]);
   })
 
   .sections((_ctx) => ([

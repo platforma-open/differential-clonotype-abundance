@@ -24,7 +24,6 @@ jobs:
     with:
       app-name: 'Block: Differential Clonotype Abundance'
       app-name-slug: 'block-differential-clonotype-abundance'
-      notify-telegram: true
       node-version: '20.x'
       build-script-name: 'build'
       pnpm-recursive-build: false

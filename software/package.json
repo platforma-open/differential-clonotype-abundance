@@ -24,6 +24,16 @@
             "Rscript",
             "{pkg}/run_onlyDESeq2.R"
           ]
+        },
+        "docker": {
+          "artifact": {
+            "type": "docker",
+            "context": "./src",
+            "dockerfile": "Dockerfile"
+          },
+          "cmd": [
+            "/app/run_onlyDESeq2.R"
+          ]
         }
       }
     }

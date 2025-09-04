@@ -35,8 +35,22 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
+RUN R -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
+
+# .Rprofile breaks renv restore
 # Copy only files that are needed
 COPY *.R .
+COPY ./renv.lock ./renv.lock
+
+# Have to use absolute paths because during execution the working directory will be changed
+# and realpath command does not work
+ENV RENV_PATHS_RENV=/app/renv
+ENV RENV_PATHS_LOCKFILE=/app/renv.lock
+
+RUN R --no-echo -e "renv::restore(clean = TRUE)"
+
+RUN echo "#!/bin/bash\nR --no-echo --no-restore -e \"renv::restore()\"\n\"\$@\"" > /app/run.sh
+RUN chmod +x /app/run.sh
 
 # Default command runs Rscript
-ENTRYPOINT ["Rscript"]
+ENTRYPOINT ["/app/run.sh"]

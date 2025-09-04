@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.10.0
+
+### Minor Changes
+
+- 4407657: Docker integration
+
 ## 1.9.0
 
 ### Minor Changes

@@ -5,7 +5,7 @@
   "description": "Block Software: Run DESeq2 with R",
   "scripts": {
     "build": "pl-pkg build",
-    "prepublishOnly": "pl-pkg publish packages",
+    "prepublishOnly": "pl-pkg prepublish",
     "do-pack": "rm -f *.tgz && pl-pkg build && pnpm pack && mv platforma-open*.tgz package.tgz",
     "changeset": "changeset",
     "version-packages": "changeset version"
@@ -23,6 +23,16 @@
           "cmd": [
             "Rscript",
             "{pkg}/run_onlyDESeq2.R"
+          ]
+        },
+        "docker": {
+          "artifact": {
+            "type": "docker",
+            "context": "./src",
+            "dockerfile": "Dockerfile"
+          },
+          "cmd": [
+            "/app/run_onlyDESeq2.R"
           ]
         }
       }

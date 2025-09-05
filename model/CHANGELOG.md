@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.model
 
+## 2.4.0
+
+### Minor Changes
+
+- d7c02ed: Full SDK update
+
 ## 2.3.0
 
 ### Minor Changes

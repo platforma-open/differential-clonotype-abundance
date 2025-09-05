@@ -57,8 +57,8 @@ wf.body(func(args) {
 				arg("-c").arg("rawCounts.csv").
 				arg("-m").arg("covariates.csv").
 				arg("-t").arg(contrastFactor.spec.annotations["pl7.app/label"]). 
-				arg("-n").arg(numerator).
-				arg("-d").arg(denominator).
+				arg("-n").arg(string(numerator)).
+				arg("-d").arg(string(denominator)).
 				arg("-o").arg("topTable.csv").
 				arg("-f").arg(string(log2FcThreshold)).
 				arg("-p").arg(string(pAdjThreshold)).

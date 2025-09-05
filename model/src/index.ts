@@ -43,8 +43,8 @@ function filterPCols(
     (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
       || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
       || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
-    // Only values associated to selected comparison
-    && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === comparison,
+      // Only values associated to selected comparison
+      && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === comparison,
   );
   return pCols;
 }
@@ -83,14 +83,14 @@ export const model = BlockModel.create()
     const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
       && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-    , { includeNativeLabel: true, addLabelAsSuffix: true });
+      , { includeNativeLabel: true, addLabelAsSuffix: true });
     const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
 
     // Then get all read count datasets that don't match blockIDs from UMI counts
     let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/readCount')
       && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-    , { includeNativeLabel: true, addLabelAsSuffix: true });
+      , { includeNativeLabel: true, addLabelAsSuffix: true });
     validCountOptions = validCountOptions.filter((item) =>
       !umiBlockIds.includes(item.ref.blockId));
 
@@ -98,7 +98,7 @@ export const model = BlockModel.create()
     const validScOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/uniqueCellCount')
       && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-    , { includeNativeLabel: true, addLabelAsSuffix: true });
+      , { includeNativeLabel: true, addLabelAsSuffix: true });
 
     // Combine all valid options
     const validOptions = [...validUmiOptions, ...validCountOptions, ...validScOptions];
@@ -161,10 +161,10 @@ export const model = BlockModel.create()
 
     return pCols.map(
       (c) =>
-        ({
-          columnId: c.id,
-          spec: c.spec,
-        } satisfies PColumnIdAndSpec),
+      ({
+        columnId: c.id,
+        spec: c.spec,
+      } satisfies PColumnIdAndSpec),
     );
   })
 
@@ -173,6 +173,6 @@ export const model = BlockModel.create()
     { type: 'link', href: '/graph', label: 'Volcano plot' },
   ]))
 
-  .done();
+  .done(2);
 
 export type BlockOutputs = InferOutputsType<typeof model>;

@@ -1,5 +1,13 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.8.2
+
+### Patch Changes
+
+- 1ddf4e9: Update python and R
+- Updated dependencies [1ddf4e9]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.model@2.4.1
+
 ## 1.8.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.11.1
+
+### Patch Changes
+
+- 1ddf4e9: Update python and R
+
 ## 1.11.0
 
 ### Minor Changes

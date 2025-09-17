@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.8.1
+
+### Patch Changes
+
+- ece0305: os limitations
+
 ## 1.8.0
 
 ### Minor Changes

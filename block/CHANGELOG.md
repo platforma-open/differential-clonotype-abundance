@@ -1,5 +1,13 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.3.1
+
+### Patch Changes
+
+- ece0305: os limitations
+- Updated dependencies [ece0305]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.ui@1.8.1
+
 ## 1.3.0
 
 ### Minor Changes

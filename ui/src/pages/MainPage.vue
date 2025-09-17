@@ -76,6 +76,12 @@ watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
   }
 });
 
+// Make sure numerator and denominator are reset when contrast factor is changed
+watch(() => [app.model.args.contrastFactor], (_) => {
+  app.model.args.numerators = [];
+  app.model.args.denominator = undefined;
+});
+
 </script>
 
 <template>

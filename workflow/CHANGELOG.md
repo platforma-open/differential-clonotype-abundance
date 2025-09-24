@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.3.2
+
+### Patch Changes
+
+- f89807d: Make it work with import VDJ
+
 ## 2.3.1
 
 ### Patch Changes

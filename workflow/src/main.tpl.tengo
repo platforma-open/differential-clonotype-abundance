@@ -111,7 +111,7 @@ wf.body(func(args) {
 		// Get runID label
 		runIdLabel := countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
 		if runIdLabel == undefined {
-			runIdLabel = "pl7.app/vdj/importVdjRunId"
+			runIdLabel = "pl7.app/vdj/vdjImport"
 		} else {
 			runIdLabel = "pl7.app/vdj/clonotypingRunId"
 		}

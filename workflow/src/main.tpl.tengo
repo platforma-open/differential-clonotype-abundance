@@ -108,13 +108,22 @@ wf.body(func(args) {
 			)
 		}
 
+		// Get runID label
+		runIdLabel := countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
+		if runIdLabel == undefined {
+			runIdLabel = "pl7.app/vdj/vdjImport"
+		} else {
+			runIdLabel = "pl7.app/vdj/clonotypingRunId"
+		}
+	
+
 		degPframeBuilder.add(
 			numerator,
 			trace.inject({
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/DCA",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"],
+					runIdLabel: countsSpec.axesSpec[1].domain[runIdLabel],
 					"pl7.app/differentialAbundance/comparison": comparison
 				},
 				valueType: "Double",
@@ -137,7 +146,7 @@ wf.body(func(args) {
 				kind: "PColumn",
 				name: "pl7.app/differentialAbundance/regulationDirection",
 				domain: {
-					"pl7.app/vdj/clonotypingRunId": countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"],
+					runIdLabel: countsSpec.axesSpec[1].domain[runIdLabel],
 					"pl7.app/differentialAbundance/comparison": comparison
 				},
 				valueType: "String",

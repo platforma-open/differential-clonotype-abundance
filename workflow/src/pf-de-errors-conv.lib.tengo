@@ -1,0 +1,37 @@
+ll := import("@platforma-sdk/workflow-tengo:ll")
+
+getColumns := func() {
+  return {
+    axes: [
+		{
+        column: "Error",
+        allowNA: false,
+        spec: {
+            name: "pl7.app/errorLog",
+            type: "String",
+            domain: {},
+            annotations: {}
+        }
+      }
+      ],
+    columns: [
+			{
+            column: "value",
+            id: "value",
+            allowNA: true,
+            spec: {
+                name: "pl7.app/errorVal",
+                valueType: "String",
+                domain: {},
+                annotations: {}
+                }
+			}
+      ],
+    storageFormat: "Binary",
+    partitionKeyLength: 0
+  }
+}
+
+export ll.toStrict({
+	getColumns: getColumns
+}) 

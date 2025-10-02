@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PFrameImpl } from '@platforma-sdk/model';
 import {
   listToOptions,
   PlAccordionSection,
@@ -14,6 +15,7 @@ import {
   PlRow,
   PlSlideModal,
   usePlDataTableSettingsV2,
+  useWatchFetch,
 } from '@platforma-sdk/ui-vue';
 import { computed, ref, watch } from 'vue';
 import { useApp } from '../app';
@@ -82,6 +84,29 @@ watch(() => [app.model.args.contrastFactor], (_) => {
   app.model.args.denominator = undefined;
 });
 
+// Get error logs
+const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframeHandle) => {
+  if (!pframeHandle) {
+    return undefined;
+  }
+  // Get ID of first pcolumn in the pframe (the only one we will access)
+  const pFrame = new PFrameImpl(pframeHandle);
+  const list = await pFrame.listColumns();
+  const id = list?.[0].columnId;
+  if (!id) {
+    return undefined;
+  }
+  // Get unique values of that first pcolumn
+  const response = await pFrame.getUniqueValues({ columnId: id, filters: [], limit: 1000000 });
+  if (!response) {
+    return undefined;
+  }
+  if (response.values.data.length === 0) {
+    return undefined;
+  }
+  return response.values.data.join('\n');
+});
+
 </script>
 
 <template>
@@ -104,6 +129,9 @@ watch(() => [app.model.args.contrastFactor], (_) => {
         </template>
       </PlBtnGhost>
     </template>
+    <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>
+      {{ errorLogs.value }}
+    </PlAlert>
     <ErrorBoundary>
       <PlAgDataTableV2
         v-model="app.model.ui.tableState"

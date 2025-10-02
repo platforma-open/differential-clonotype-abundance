@@ -4,9 +4,10 @@ exec := import("@platforma-sdk/workflow-tengo:exec")
 assets:= import("@platforma-sdk/workflow-tengo:assets")
 xsv := import("@platforma-sdk/workflow-tengo:pframes.xsv")
 pframes := import("@platforma-sdk/workflow-tengo:pframes")
-pSpec := import("@platforma-sdk/workflow-tengo:pframes.spec")
-topTablePfconvParamsLib := import(":top_table_pfconv_params")
-dcaPfconvParamsLib := import(":dca_pfconv_params")
+render := import("@platforma-sdk/workflow-tengo:render")
+
+pfErrorLogsConv := import(":pf-de-errors-conv")
+diffAnalysisTpl := assets.importTemplate(":diffAnalysis")
 
 wf.prepare(func(args){
 
@@ -37,146 +38,73 @@ wf.body(func(args) {
 	log2FcThreshold := args.log2FcThreshold
 	pAdjThreshold := args.pAdjThreshold
 
+	// Set default conversion memory and CPU
+	defaultConvMem := "16GiB"
+	defaultConvCpu := 1
+
 	covariates := []
 	for _, v in args.metaRefs {
 		covariates = append(covariates, v)
 	}
 	
 	// convert PColumns to csv
-	csvCounts := xsv.exportFrame([allCounts], "csv", {})
-	csvCovariates := xsv.exportFrame(covariates, "csv", {})
+	csvCovariates := xsv.exportFrame(covariates, "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
 
-	degPframeBuilder := pframes.pFrameBuilder()
-	regDirPframeBuilder := pframes.pFrameBuilder()
-	topDegPframeBuilder := pframes.pFrameBuilder()
+	// Run script to check if metadata matrix will be full rank
+	continueCheck := exec.builder().
+			software(assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:prev-checks")).
+			arg("--output").arg(".").
+			arg("--metadata").arg("covariates.csv").
+			addFile("covariates.csv", csvCovariates).
+			arg("--contrast_factor").arg(contrastFactor.spec.annotations["pl7.app/label"]).
+			arg("--error_output").arg("./errorLogs.csv").
+			saveFileContent("continueOrNot.txt").
+			saveFile("errorLogs.csv").
+			printErrStreamToStdout().
+			saveStdoutContent().
+			cache(24 * 60 * 60 * 1000).
+			run()
 
-	for numerator in args.numerators {
-		numerator = string(numerator)
-		diffAbundance := exec.builder().
-				software(assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:main")).
-				arg("-c").arg("rawCounts.csv").
-				arg("-m").arg("covariates.csv").
-				arg("-t").arg(contrastFactor.spec.annotations["pl7.app/label"]). 
-				arg("-n").arg(string(numerator)).
-				arg("-d").arg(string(denominator)).
-				arg("-o").arg("topTable.csv").
-				arg("-f").arg(string(log2FcThreshold)).
-				arg("-p").arg(string(pAdjThreshold)).
-				arg("--values_column").arg(countsSpec.annotations["pl7.app/label"]).
-				arg("--IDs_column").arg(countsSpec.axesSpec[1].annotations["pl7.app/label"]).
-				arg("--min_counts").arg("1").
-				// @TODO: improve filter, right now is min_counts in at least one sample
-				// fraction_for_filter value is set to at least 1 in R code
-				arg("--fraction_for_filter").arg("0.01").
-				addFile("rawCounts.csv", csvCounts).
-				addFile("covariates.csv", csvCovariates).
-				saveFile("topTable.csv").
-				saveFile("DEG.csv").
-				printErrStreamToStdout().
-				saveStdoutContent().
-				cache(24 * 60 * 60 * 1000).
-				run()
-				
-		topTableImportParams := topTablePfconvParamsLib.getColumns(countsSpec,
-																   log2FcThreshold,
-																   pAdjThreshold)
-		topTablePf := xsv.importFile(diffAbundance.getFile("topTable.csv"), "csv", topTableImportParams, 
-															// This changes output format from default to per column
-															// So key will be column name and values spec and data
-															{splitDataAndSpec: true})
+	// This content is resolved in a sub-template only
+	continueOrNot := continueCheck.getFileContent("continueOrNot.txt")
 
-		// Add DEG export with specific import params. Adding new csv output to script with only DEGs and logFC
-		degImportParams := dcaPfconvParamsLib.getColumns(countsSpec)
-		DegPf := xsv.importFile(diffAbundance.getFile("DEG.csv"), "csv", degImportParams)
+	errorLogsImportParams := pfErrorLogsConv.getColumns()
+	errorLogsPf := xsv.importFile(continueCheck.getFile("errorLogs.csv"), "csv", errorLogsImportParams, { mem: defaultConvMem, cpu: defaultConvCpu })
 
-		trace := pSpec.makeTrace(countsSpec,
-			{type: "milaboratories.differential-clonotype-abundance", id: blockId, importance: 30, 
-			label: "DCA - " + numerator + "/" + denominator + " (log2FC: " + log2FcThreshold + ", pAdj: " + pAdjThreshold + ")"}
-		)
-		
-		comparison := numerator + " - vs - " + denominator
-
-		for columnName, value in topTablePf { 
-			columnSpec := copy(value.spec)
-			columnSpec.axesSpec[0].domain["pl7.app/differentialAbundance/comparison"] = comparison
-			columnData := value.data
-			topDegPframeBuilder.add(
-				numerator + " - " + columnName,
-				trace.inject(columnSpec),
-				columnData
-
-			)
+	// Run differential analysis template
+	// Analysis will only run if matrix is full rank (continueOrNot.txt content == "continue")
+	diffAnalysis := render.create(diffAnalysisTpl, {
+		continueOrNot: continueOrNot,
+		allCounts: allCounts,
+		csvCovariates: csvCovariates,
+		numerators: args.numerators,
+		denominator: denominator,
+		contrastFactor: contrastFactor,
+		params: {
+			log2FcThreshold: log2FcThreshold,
+			pAdjThreshold: pAdjThreshold,
+			defaultConvMem: defaultConvMem,
+			defaultConvCpu: defaultConvCpu
+		},
+		metaInputs: {
+			blockId: blockId
 		}
+	})
 
-		// Get runID label
-		runIdLabel := countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
-		if runIdLabel == undefined {
-			runIdLabel = "pl7.app/vdj/vdjImport"
-		} else {
-			runIdLabel = "pl7.app/vdj/clonotypingRunId"
-		}
-	
+	// Gather results from continueCheck template
+	degPF := diffAnalysis.output("degPF", 24 * 60 * 60 * 1000)
+	regDirPF := diffAnalysis.output("regDirPF", 24 * 60 * 60 * 1000)
+	topDegPF := diffAnalysis.output("topDegPF", 24 * 60 * 60 * 1000)
 
-		degPframeBuilder.add(
-			numerator,
-			trace.inject({
-				kind: "PColumn",
-				name: "pl7.app/differentialAbundance/DCA",
-				domain: {
-					runIdLabel: countsSpec.axesSpec[1].domain[runIdLabel],
-					"pl7.app/differentialAbundance/comparison": comparison
-				},
-				valueType: "Double",
-				annotations: {
-					"pl7.app/label": comparison + " (log2FC)",
-					"pl7.app/isAbundance": "true",
-					"pl7.app/table/visibility": "default",
-					"pl7.app/table/orderPriority": "85000"
-				},
-				axesSpec: [
-					countsSpec.axesSpec[1]
-					]
-			}),
-			DegPf["log2foldchange.data"]
-		)
-
-		regDirPframeBuilder.add(
-			numerator,
-			trace.inject({
-				kind: "PColumn",
-				name: "pl7.app/differentialAbundance/regulationDirection",
-				domain: {
-					runIdLabel: countsSpec.axesSpec[1].domain[runIdLabel],
-					"pl7.app/differentialAbundance/comparison": comparison
-				},
-				valueType: "String",
-				annotations: {
-					"pl7.app/label": comparison + " (UP\\Down-regulated clonotype list)",
-					"pl7.app/isAbundance": "true",
-					"pl7.app/table/visibility": "optional",
-					"pl7.app/table/orderPriority": "84000"
-
-				},
-				axesSpec: [
-					countsSpec.axesSpec[1]
-					]
-			}),
-			DegPf["regulationDirection.data"]
-		)
-	}
-
-	// Build the final PFrames
-	degPf := degPframeBuilder.build()
-	topDegPf := topDegPframeBuilder.build()
-	regDirPf := regDirPframeBuilder.build()
 	exports := {
-		DEG: degPf,
-		regDir: regDirPf
+		DEG: degPF,
+		regDir: regDirPF
 	}
 
 	return {
 		outputs: {
-			topTablePf: pframes.exportFrame(topDegPf)
+			topTablePf: topDegPF,
+			errorLogs: pframes.exportFrame(errorLogsPf)
 		},
 		exports: exports
 	}

@@ -18,7 +18,7 @@
             "type": "R",
             "registry": "platforma-open",
             "environment": "@platforma-open/milaboratories.runenv-r-differential-expression:main",
-            "root": "./src"
+            "root": "./src/deseq2"
           },
           "cmd": [
             "Rscript",
@@ -28,11 +28,39 @@
         "docker": {
           "artifact": {
             "type": "docker",
-            "context": "./src",
+            "context": "./src/deseq2",
             "dockerfile": "Dockerfile"
           },
           "cmd": [
             "/app/run_onlyDESeq2.R"
+          ]
+        }
+      },
+      "prev-checks": {
+        "binary": {
+          "artifact": {
+            "type": "python",
+            "registry": "platforma-open",
+            "environment": "@platforma-open/milaboratories.runenv-python-3:3.12.10",
+            "dependencies": {
+              "toolset": "pip",
+              "requirements": "requirements.txt"
+            },
+            "root": "./src/prev-checks"
+          },
+          "cmd": [
+            "python",
+            "{pkg}/prevChecks.py"
+          ]
+        },
+        "docker": {
+          "artifact": {
+            "type": "docker",
+            "context": "./src/prev-checks",
+            "dockerfile": "Dockerfile"
+          },
+          "cmd": [
+            "/app/prevChecks.py"
           ]
         }
       }
@@ -40,6 +68,7 @@
   },
   "devDependencies": {
     "@platforma-open/milaboratories.runenv-r-differential-expression": "catalog:",
-    "@platforma-sdk/package-builder": "catalog:"
+    "@platforma-sdk/package-builder": "catalog:",
+    "@platforma-open/milaboratories.runenv-python-3": "catalog:"
   }
 }

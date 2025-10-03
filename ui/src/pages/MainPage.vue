@@ -24,7 +24,6 @@ import ErrorBoundary from '../components/ErrorBoundary.vue';
 const app = useApp();
 
 const tableSettings = usePlDataTableSettingsV2({
-  sourceId: () => app.model.args.countsRef,
   model: () => app.model.outputs.pt,
 });
 

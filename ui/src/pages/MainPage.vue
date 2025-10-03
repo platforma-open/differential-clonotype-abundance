@@ -128,7 +128,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
         </template>
       </PlBtnGhost>
     </template>
-    <PlAlert v-if="errorLogs.value !== undefined" type="error" icon>
+    <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>
       {{ errorLogs.value }}
     </PlAlert>
     <ErrorBoundary>

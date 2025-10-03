@@ -52,7 +52,7 @@ def main():
     errorLogs = []
     # Make sure at least we have a sample with enough replicates
     if int(metadata[args.contrast_factor].value_counts().max()) == 1:
-        errorLogs.append("Error: This block requires replicates to run, please try comparing different conditions with replicates or use Clonotype Enrichment block instead")
+        errorLogs.append("Warning: This block requires replicates to perform the analysis. Please compare conditions that include replicates, or use the Clonotype Enrichment block instead.")
         export_result("stop", args.output)
     else:
          # Rename columns to numbers toa void issues related to weird characters
@@ -66,7 +66,7 @@ def main():
         if rankResult:
             export_result("continue", args.output)
         else:
-            errorLogs.append("Error: The model matrix is not full rank, so the model cannot be fit as specified. \
+            errorLogs.append("Warning: The model matrix is not full rank, so the model cannot be fit as specified. \
               One or more variables or interaction terms in the design formula are linear\
               combinations of the others and must be removed. Please, check the metadata \
               columns included in the Design section.")

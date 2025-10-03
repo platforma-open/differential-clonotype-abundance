@@ -40,7 +40,7 @@ RUN R -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
 # .Rprofile breaks renv restore
 # Copy only files that are needed
 COPY *.R .
-COPY ./renv.lock ./renv.lock
+COPY *.lock .
 
 # Have to use absolute paths because during execution the working directory will be changed
 # and realpath command does not work

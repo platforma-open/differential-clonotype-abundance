@@ -1,5 +1,16 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.5.0
+
+### Minor Changes
+
+- 7a46bd0: Be more restrictive while replicate check
+
+### Patch Changes
+
+- Updated dependencies [7a46bd0]
+  - @platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software@1.13.0
+
 ## 2.4.0
 
 ### Minor Changes

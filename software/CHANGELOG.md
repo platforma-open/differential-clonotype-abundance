@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.13.0
+
+### Minor Changes
+
+- 7a46bd0: Be more restrictive while replicate check
+
 ## 1.12.0
 
 ### Minor Changes

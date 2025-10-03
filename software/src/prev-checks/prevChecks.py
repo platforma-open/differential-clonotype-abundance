@@ -3,6 +3,7 @@ import pandas as pd
 from patsy import dmatrix
 import argparse
 import os
+import json
 
 def is_full_rank(design_df, formula):
     """
@@ -40,8 +41,13 @@ def main():
     parser.add_argument('--metadata', type=str, required=True, help='Path to metadata CSV file')
     parser.add_argument('--output', type=str, required=True, help='Output directory')
     parser.add_argument('--contrast_factor', type=str, required=True, help='Contrast factor')
+    parser.add_argument('--numerators', required=True, help='Numerators')
+    parser.add_argument('--denominator', type=str, required=True, help='Denominator')
     parser.add_argument('--error_output', type=str, required=True, help='Error output directory')
     args = parser.parse_args()
+
+    # Convert numerators json to list
+    numerators = json.loads(args.numerators)
 
     # Load metadata
     metadata = pd.read_csv(args.metadata)
@@ -50,9 +56,13 @@ def main():
     # Create error logs table
     df_error = pd.DataFrame(columns=["Error", "value"])
     errorLogs = []
-    # Make sure at least we have a sample with enough replicates
-    if int(metadata[args.contrast_factor].value_counts().max()) == 1:
-        errorLogs.append("Warning: This block requires replicates to perform the analysis. Please compare conditions that include replicates, or use the Clonotype Enrichment block instead.")
+    # Make sure we have enough replicates for all the comparisons that are going be done
+    for numerator in numerators:
+        # Make sure at least we have a sample with enough replicates
+        if int(metadata[args.contrast_factor].value_counts()[[numerator, args.denominator]].max()) == 1:
+            errorLogs.append(f"Warning: This block requires replicates to perform the analysis. It is not feasible to compare {numerator} vs {args.denominator} because there is only one sample for each condition.")
+            
+    if len(errorLogs) > 0:
         export_result("stop", args.output)
     else:
          # Rename columns to numbers toa void issues related to weird characters

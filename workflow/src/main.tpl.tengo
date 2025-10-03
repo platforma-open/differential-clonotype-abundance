@@ -57,6 +57,8 @@ wf.body(func(args) {
 			arg("--metadata").arg("covariates.csv").
 			addFile("covariates.csv", csvCovariates).
 			arg("--contrast_factor").arg(contrastFactor.spec.annotations["pl7.app/label"]).
+			arg("--numerators").arg(string(args.numerators)).
+			arg("--denominator").arg(denominator).
 			arg("--error_output").arg("./errorLogs.csv").
 			saveFileContent("continueOrNot.txt").
 			saveFile("errorLogs.csv").

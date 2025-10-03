@@ -52,16 +52,6 @@
             "python",
             "{pkg}/prevChecks.py"
           ]
-        },
-        "docker": {
-          "artifact": {
-            "type": "docker",
-            "context": "./src/prev-checks",
-            "dockerfile": "Dockerfile"
-          },
-          "cmd": [
-            "/app/prevChecks.py"
-          ]
         }
       }
     }

@@ -28,7 +28,7 @@
         "docker": {
           "artifact": {
             "type": "docker",
-            "context": "./src/deseq2",
+            "context": "./software/src/deseq2",
             "dockerfile": "Dockerfile"
           },
           "cmd": [

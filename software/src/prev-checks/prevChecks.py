@@ -52,7 +52,7 @@ def main():
     errorLogs = []
     # Make sure at least we have a sample with enough replicates
     if int(metadata[args.contrast_factor].value_counts().max()) == 1:
-        errorLogs.append("This block requires replicates to run, please try comparing different conditions with replicates or use Clonotype Enrichment block instead")
+        errorLogs.append("Error: This block requires replicates to run, please try comparing different conditions with replicates or use Clonotype Enrichment block instead")
         export_result("stop", args.output)
     else:
          # Rename columns to numbers toa void issues related to weird characters

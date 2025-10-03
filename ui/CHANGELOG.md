@@ -1,5 +1,16 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.9.0
+
+### Minor Changes
+
+- b10a8ea: Fix user error and refactor error logs
+
+### Patch Changes
+
+- Updated dependencies [b10a8ea]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.model@2.5.0
+
 ## 1.8.2
 
 ### Patch Changes

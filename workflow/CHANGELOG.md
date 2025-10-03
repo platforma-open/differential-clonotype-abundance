@@ -1,5 +1,16 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.4.0
+
+### Minor Changes
+
+- b10a8ea: Fix user error and refactor error logs
+
+### Patch Changes
+
+- Updated dependencies [b10a8ea]
+  - @platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software@1.12.0
+
 ## 2.3.2
 
 ### Patch Changes

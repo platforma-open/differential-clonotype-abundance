@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.12.0
+
+### Minor Changes
+
+- b10a8ea: Fix user error and refactor error logs
+
 ## 1.11.1
 
 ### Patch Changes

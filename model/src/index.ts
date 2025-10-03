@@ -126,6 +126,15 @@ export const model = BlockModel.create()
     return [...new Set(Object.values(values))];
   })
 
+  .output('errorLogs', (ctx) => {
+    const pCols = ctx.outputs?.resolve('errorLogs')?.getPColumns();
+    if (pCols === undefined) {
+      return undefined;
+    }
+
+    return ctx.createPFrame(pCols);
+  })
+
   // Returns a map of results
   .output('pt', (ctx) => {
     let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();

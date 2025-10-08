@@ -50,7 +50,7 @@ def main():
     numerators = json.loads(args.numerators)
 
     # Load metadata
-    metadata = pd.read_csv(args.metadata)
+    metadata = pd.read_csv(args.metadata, dtype=str)
     # Set sample as index
     metadata.set_index(keys="Sample", inplace=True)
     # Create error logs table

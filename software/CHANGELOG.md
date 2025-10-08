@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.14.0
+
+### Minor Changes
+
+- adfb002: Fix code to correctly handle numeric numerators/denominators
+
 ## 1.13.0
 
 ### Minor Changes

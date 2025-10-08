@@ -50,7 +50,7 @@ def main():
     numerators = json.loads(args.numerators)
 
     # Load metadata
-    metadata = pd.read_csv(args.metadata)
+    metadata = pd.read_csv(args.metadata, dtype=str)
     # Set sample as index
     metadata.set_index(keys="Sample", inplace=True)
     # Create error logs table
@@ -59,7 +59,7 @@ def main():
     # Make sure we have enough replicates for all the comparisons that are going be done
     for numerator in numerators:
         # Make sure at least we have a sample with enough replicates
-        if int(metadata[args.contrast_factor].value_counts()[[numerator, args.denominator]].max()) == 1:
+        if int(metadata[args.contrast_factor].value_counts()[[str(numerator), str(args.denominator)]].max()) == 1:
             errorLogs.append(f"Warning: This block requires replicates to perform the analysis. It is not feasible to compare {numerator} vs {args.denominator} because there is only one sample for each condition.")
             
     if len(errorLogs) > 0:

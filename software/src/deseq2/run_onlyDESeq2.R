@@ -90,7 +90,15 @@ if (is.null(opt$count_matrix) || is.null(opt$metadata) || is.null(opt$contrast_f
 
 # Load count matrix and covariates metadata
 count_long <- read.csv(opt$count_matrix, check.names = FALSE)
-metadata <- read.csv(opt$metadata, row.names = 1, check.names = FALSE)
+metadata <- read.table(opt$metadata,
+                row.names = 1,
+                sep=",",
+                header=TRUE,
+                colClasses='factor')
+
+# Rename contrast factor removing weird characters
+# This is done by default at the time of reading the metadata in the table
+opt$contrast_factor <- make.names(opt$contrast_factor)
 
 # Filter out samples for which we don't have metadata
 count_long <- count_long[count_long[, "Sample"] %in% rownames(metadata), ]

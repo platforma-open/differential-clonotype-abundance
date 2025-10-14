@@ -1,5 +1,15 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.model
 
+## 2.5.1
+
+### Patch Changes
+
+- eab9b23: technical release
+- 203e1c6: technical release
+- 0aca834: technical release
+- 7f65a36: technical release
+- 4d6b04b: technical release
+
 ## 2.5.0
 
 ### Minor Changes

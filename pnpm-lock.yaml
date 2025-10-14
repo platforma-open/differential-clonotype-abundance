@@ -12,12 +12,18 @@ catalogs:
     '@milaboratories/graph-maker':
       specifier: ^1.1.155
       version: 1.1.158
+    '@milaboratories/software-pframes-conv':
+      specifier: ^2.2.7
+      version: 2.2.7
     '@platforma-open/milaboratories.runenv-python-3':
       specifier: ^1.4.9
       version: 1.4.13
     '@platforma-open/milaboratories.runenv-r-differential-expression':
       specifier: ^1.0.6
       version: 1.0.7
+    '@platforma-open/milaboratories.software-small-binaries':
+      specifier: ^1.15.23
+      version: 1.15.23
     '@platforma-sdk/block-tools':
       specifier: ^2.6.2
       version: 2.6.2
@@ -193,6 +199,12 @@ importers:
         specifier: workspace:*
         version: link:../software
     devDependencies:
+      '@milaboratories/software-pframes-conv':
+        specifier: 'catalog:'
+        version: 2.2.7
+      '@platforma-open/milaboratories.software-small-binaries':
+        specifier: 'catalog:'
+        version: 1.15.23
       '@platforma-sdk/tengo-builder':
         specifier: 'catalog:'
         version: 2.3.0

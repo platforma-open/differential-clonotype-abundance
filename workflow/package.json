@@ -15,7 +15,7 @@
     "@platforma-sdk/tengo-builder": "catalog:",
     "@platforma-sdk/workflow-tengo": "catalog:",
     "@milaboratories/software-pframes-conv": "catalog:",
-    "@platforma-open/milaboratories.software-small-binaries": "^1.15.7",
+    "@platforma-open/milaboratories.software-small-binaries": "catalog:",
     "@platforma-sdk/test": "catalog:",
     "vitest": "catalog:"
   }

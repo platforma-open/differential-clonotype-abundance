@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.5.3
+
+### Patch Changes
+
+- 87c602a: Support parquet format (update SDK)
+
 ## 2.5.2
 
 ### Patch Changes

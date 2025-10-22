@@ -35,7 +35,7 @@ getColumns := func(countsSpec) {
 				}
 			}
 			],
-		"storageFormat": "Binary",
+		"storageFormat": "Parquet",
 		"partitionKeyLength": 0
 	}
 }

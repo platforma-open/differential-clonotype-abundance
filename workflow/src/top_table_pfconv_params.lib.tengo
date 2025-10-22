@@ -122,7 +122,7 @@ getColumns := func(countsSpec, log2FCThreshold, pAdjFCThreshold) {
 				}
 			}
 			],
-		"storageFormat": "Binary",
+		"storageFormat": "Parquet",
 		"partitionKeyLength": 0
 	}
 }

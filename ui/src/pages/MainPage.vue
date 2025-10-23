@@ -46,11 +46,24 @@ const contrastFactorOptions = computed(() => {
   }));
 });
 
-const numeratorOptions = computed(() => {
-  return app.model.outputs.denominatorOptions?.map((v) => ({
-    value: v,
-    label: v,
-  }));
+// Get all possible numerator/denominator values
+const numeratorOptions = useWatchFetch(() => app.model.outputs.denominatorOptions, async (pframeHandle) => {
+  if (!pframeHandle) {
+    return undefined;
+  }
+  // Get ID of first pcolumn in the pframe (the only one we will access)
+  const pFrame = new PFrameImpl(pframeHandle);
+  const list = await pFrame.listColumns();
+  const id = list?.[0].columnId;
+  if (!id) {
+    return undefined;
+  }
+  // Get unique values of that first pcolumn
+  const response = await pFrame.getUniqueValues({ columnId: id, filters: [], limit: 1000000 });
+  if (!response) {
+    return undefined;
+  }
+  return [...response.values.data].map((v) => ({ value: String(v), label: String(v) }));
 });
 
 // Only options not selected as numerators[] are accepted as denominator
@@ -148,7 +161,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
       />
       <PlDropdownMulti v-model="app.model.args.covariateRefs" :options="covariateOptions" label="Design" />
       <PlDropdown v-model="app.model.args.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
-      <PlDropdownMulti v-model="app.model.args.numerators" :options="numeratorOptions" label="Numerator" >
+      <PlDropdownMulti v-model="app.model.args.numerators" :options="numeratorOptions.value" label="Numerator" >
         <template #tooltip>
           Calculate a contrast per each one of the selected Numerators versus the selected control/baseline
         </template>

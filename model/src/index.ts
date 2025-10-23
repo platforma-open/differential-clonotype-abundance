@@ -73,40 +73,14 @@ export const model = BlockModel.create()
 
   // Activate "Run" button only after these conditions are satisfied
   .argsValid((ctx) => (
-    (ctx.args.log2FcThreshold !== undefined)
-    && (ctx.args.pAdjThreshold !== undefined)
+    ((ctx.args.countsRef !== undefined)
+      && (ctx.args.covariateRefs !== undefined)
+      && (ctx.args.contrastFactor !== undefined)
+      && (ctx.args.numerators.length > 0)
+      && (ctx.args.denominator !== undefined)
+      && (ctx.args.log2FcThreshold !== undefined)
+      && (ctx.args.pAdjThreshold !== undefined))
   ))
-
-// User can only select as input UMI count matrices or read count matrices
-// for cases where we don't have UMI counts
-// includeNativeLabel and addLabelAsSuffix makes visible the data source dataset
-// Result: [dataID] / input
-// .output('countsOptions', (ctx) => {
-//   // First get all UMI count dataset and their block IDs
-//   const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-//     && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
-//     && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-//   , { includeNativeLabel: true, addLabelAsSuffix: true });
-//   const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
-
-//   // Then get all read count datasets that don't match blockIDs from UMI counts
-//   let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-//     && (spec.name === 'pl7.app/vdj/readCount')
-//     && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-//   , { includeNativeLabel: true, addLabelAsSuffix: true });
-//   validCountOptions = validCountOptions.filter((item) =>
-//     !umiBlockIds.includes(item.ref.blockId));
-
-//   // Get single cell data counts
-//   const validScOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-//     && (spec.name === 'pl7.app/vdj/uniqueCellCount')
-//     && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-//   , { includeNativeLabel: true, addLabelAsSuffix: true });
-
-//   // Combine all valid options
-//   const validOptions = [...validUmiOptions, ...validCountOptions, ...validScOptions];
-//   return validOptions;
-// })
 
   .output('countsOptions', (ctx) =>
     ctx.resultPool.getOptions([
@@ -143,13 +117,10 @@ export const model = BlockModel.create()
   .output('denominatorOptions', (ctx) => {
     if (!ctx.args.contrastFactor) return undefined;
 
-    const data = ctx.resultPool.getDataByRef(ctx.args.contrastFactor)?.data;
+    const pColumn = ctx.resultPool.getPColumnByRef(ctx.args.contrastFactor);
+    if (!pColumn) return undefined;
 
-    // @TODO need a convenient method in API
-    const values = data?.getDataAsJson<Record<string, string>>()?.['data'];
-    if (!values) return undefined;
-
-    return [...new Set(Object.values(values))];
+    return ctx.createPFrame([pColumn]);
   })
 
   .output('errorLogs', (ctx) => {

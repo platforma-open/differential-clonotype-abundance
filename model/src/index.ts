@@ -77,36 +77,59 @@ export const model = BlockModel.create()
     && (ctx.args.pAdjThreshold !== undefined)
   ))
 
-  // User can only select as input UMI count matrices or read count matrices
-  // for cases where we don't have UMI counts
-  // includeNativeLabel and addLabelAsSuffix makes visible the data source dataset
-  // Result: [dataID] / input
-  .output('countsOptions', (ctx) => {
-    // First get all UMI count dataset and their block IDs
-    const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
-      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-    , { includeNativeLabel: true, addLabelAsSuffix: true });
-    const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
+// User can only select as input UMI count matrices or read count matrices
+// for cases where we don't have UMI counts
+// includeNativeLabel and addLabelAsSuffix makes visible the data source dataset
+// Result: [dataID] / input
+// .output('countsOptions', (ctx) => {
+//   // First get all UMI count dataset and their block IDs
+//   const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
+//     && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
+//     && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
+//   , { includeNativeLabel: true, addLabelAsSuffix: true });
+//   const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
 
-    // Then get all read count datasets that don't match blockIDs from UMI counts
-    let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/readCount')
-      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-    , { includeNativeLabel: true, addLabelAsSuffix: true });
-    validCountOptions = validCountOptions.filter((item) =>
-      !umiBlockIds.includes(item.ref.blockId));
+//   // Then get all read count datasets that don't match blockIDs from UMI counts
+//   let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
+//     && (spec.name === 'pl7.app/vdj/readCount')
+//     && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
+//   , { includeNativeLabel: true, addLabelAsSuffix: true });
+//   validCountOptions = validCountOptions.filter((item) =>
+//     !umiBlockIds.includes(item.ref.blockId));
 
-    // Get single cell data counts
-    const validScOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/uniqueCellCount')
-      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-    , { includeNativeLabel: true, addLabelAsSuffix: true });
+//   // Get single cell data counts
+//   const validScOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
+//     && (spec.name === 'pl7.app/vdj/uniqueCellCount')
+//     && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
+//   , { includeNativeLabel: true, addLabelAsSuffix: true });
 
-    // Combine all valid options
-    const validOptions = [...validUmiOptions, ...validCountOptions, ...validScOptions];
-    return validOptions;
-  })
+//   // Combine all valid options
+//   const validOptions = [...validUmiOptions, ...validCountOptions, ...validScOptions];
+//   return validOptions;
+// })
+
+  .output('countsOptions', (ctx) =>
+    ctx.resultPool.getOptions([
+      // Clonotyoe input
+      {
+        axes: [
+          { name: 'pl7.app/sampleId' },
+          { },
+        ],
+        annotations: { 'pl7.app/isAbundance': 'true',
+          'pl7.app/abundance/normalized': 'false',
+          'pl7.app/abundance/isPrimary': 'true' },
+      },
+      // RNA input
+      {
+        axes: [
+          { name: 'pl7.app/sampleId' },
+          { },
+        ],
+        annotations: { 'pl7.app/isAbundance': 'true' },
+        domain: { 'pl7.app/abundance/normalized': 'false' },
+      }], { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false }),
+  )
 
   .output('metadataOptions', (ctx) =>
     ctx.resultPool.getOptions((spec) => isPColumnSpec(spec) && spec.name === 'pl7.app/metadata'),

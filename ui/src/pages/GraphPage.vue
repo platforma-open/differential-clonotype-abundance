@@ -2,12 +2,17 @@
 import type { PredefinedGraphOption } from '@milaboratories/graph-maker';
 import { GraphMaker } from '@milaboratories/graph-maker';
 import '@milaboratories/graph-maker/styles';
-import type { PColumnIdAndSpec } from '@platforma-sdk/model';
-import { listToOptions, PlDropdown } from '@platforma-sdk/ui-vue';
-import { computed } from 'vue';
+import type { PColumnIdAndSpec, PlSelectionModel } from '@platforma-sdk/model';
+import { listToOptions, PlBtnGhost, PlDropdown, PlMultiSequenceAlignment, PlSlideModal } from '@platforma-sdk/ui-vue';
+import { computed, ref } from 'vue';
 import { useApp } from '../app';
+import {
+  isSequenceColumn,
+} from '../util';
 
 const app = useApp();
+
+const multipleSequenceAlignmentOpen = ref(false);
 
 function getDefaultOptions(topTablePcols?: PColumnIdAndSpec[]) {
   if (!topTablePcols) {
@@ -63,11 +68,25 @@ const comparisonOptions = computed(() => {
   return listToOptions(options);
 });
 
+const selection = ref<PlSelectionModel>({
+  axesSpec: [],
+  selectedKeys: [],
+});
+
+// remove comparison from domain to send proper selection to msa component
+const msaSelection = computed<PlSelectionModel>(() => {
+  const newSelection: PlSelectionModel = JSON.parse(JSON.stringify(selection.value));
+  if (newSelection.axesSpec?.[0]?.domain)
+    delete newSelection.axesSpec[0].domain['pl7.app/differentialAbundance/comparison'];
+
+  return newSelection;
+});
 </script>
 
 <template>
   <GraphMaker
     v-model="app.model.ui.graphState"
+    v-model:selection="selection"
     :data-state-key="app.model.args.countsRef"
     chartType="scatterplot-umap"
     :p-frame="app.model.outputs.topTablePf"
@@ -78,6 +97,25 @@ const comparisonOptions = computed(() => {
         v-model="app.model.ui.comparison" :options="comparisonOptions"
         label="Comparison" :style="{ width: '300px' }"
       />
+      <PlBtnGhost
+        icon="dna"
+        @click.stop="() => (multipleSequenceAlignmentOpen = true)"
+      >
+        Multiple Sequence Alignment
+      </PlBtnGhost>
     </template>
   </GraphMaker>
+  <PlSlideModal
+    v-model="multipleSequenceAlignmentOpen"
+    width="100%"
+    :close-on-outside-click="false"
+  >
+    <template #title>Multiple Sequence Alignment</template>
+    <PlMultiSequenceAlignment
+      v-model="app.model.ui.alignmentModel"
+      :sequence-column-predicate="isSequenceColumn"
+      :p-frame="app.model.outputs.msaPf"
+      :selection="msaSelection"
+    />
+  </PlSlideModal>
 </template>

@@ -5,6 +5,7 @@ import type {
   PColumnIdAndSpec,
   PFrameHandle,
   PlDataTableStateV2,
+  PlMultiSequenceAlignmentModel,
   PlRef,
   TreeNodeAccessor,
 } from '@platforma-sdk/model';
@@ -21,6 +22,7 @@ export type UiState = {
   graphState: GraphMakerState;
   selectedChain?: string;
   comparison?: string;
+  alignmentModel: PlMultiSequenceAlignmentModel;
 };
 
 export type BlockArgs = {
@@ -43,8 +45,8 @@ function filterPCols(
     (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
       || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
       || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
-      // Only values associated to selected comparison
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === comparison,
+    // Only values associated to selected comparison
+    && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === comparison,
   );
   return pCols;
 }
@@ -66,6 +68,7 @@ export const model = BlockModel.create()
       template: 'dots',
       currentTab: null,
     },
+    alignmentModel: {},
   })
 
   // Activate "Run" button only after these conditions are satisfied
@@ -83,14 +86,14 @@ export const model = BlockModel.create()
     const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
       && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-      , { includeNativeLabel: true, addLabelAsSuffix: true });
+    , { includeNativeLabel: true, addLabelAsSuffix: true });
     const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
 
     // Then get all read count datasets that don't match blockIDs from UMI counts
     let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/readCount')
       && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-      , { includeNativeLabel: true, addLabelAsSuffix: true });
+    , { includeNativeLabel: true, addLabelAsSuffix: true });
     validCountOptions = validCountOptions.filter((item) =>
       !umiBlockIds.includes(item.ref.blockId));
 
@@ -98,7 +101,7 @@ export const model = BlockModel.create()
     const validScOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
       && (spec.name === 'pl7.app/vdj/uniqueCellCount')
       && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-      , { includeNativeLabel: true, addLabelAsSuffix: true });
+    , { includeNativeLabel: true, addLabelAsSuffix: true });
 
     // Combine all valid options
     const validOptions = [...validUmiOptions, ...validCountOptions, ...validScOptions];
@@ -170,11 +173,29 @@ export const model = BlockModel.create()
 
     return pCols.map(
       (c) =>
-      ({
-        columnId: c.id,
-        spec: c.spec,
-      } satisfies PColumnIdAndSpec),
+        ({
+          columnId: c.id,
+          spec: c.spec,
+        } satisfies PColumnIdAndSpec),
     );
+  })
+
+  .output('msaPf', (ctx) => {
+    const msaCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (!msaCols) return undefined;
+
+    const datasetRef = ctx.args.countsRef;
+    if (datasetRef === undefined)
+      return undefined;
+
+    const seqCols = ctx.resultPool.getAnchoredPColumns(
+      { main: datasetRef },
+      [{ axes: [{ anchor: 'main', idx: 1 }] }],
+    );
+    if (seqCols === undefined)
+      return undefined;
+
+    return createPFrameForGraphs(ctx, [...msaCols, ...seqCols]);
   })
 
   .sections((_ctx) => ([

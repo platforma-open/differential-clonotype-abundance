@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { PFrameImpl } from '@platforma-sdk/model';
 import {
-  listToOptions,
   PlAccordionSection,
   PlAgDataTableV2,
   PlAlert,
@@ -25,6 +24,7 @@ const app = useApp();
 
 const tableSettings = usePlDataTableSettingsV2({
   model: () => app.model.outputs.pt,
+  sheets: () => app.model.outputs.sheets,
 });
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
@@ -72,24 +72,6 @@ const denominatorOptions = computed(() => {
     !app.model.args.numerators.includes(op.value));
 });
 
-// Generate list of comparisons with all possible numerator x denominator combinations
-const comparisonOptions = computed(() => {
-  const options: string[] = [];
-  if (app.model.args.numerators.length !== 0
-    && app.model.args.denominator !== undefined) {
-    for (const num of app.model.args.numerators) {
-      options.push(num + ' - vs - ' + app.model.args.denominator);
-    }
-  }
-  return listToOptions(options);
-});
-
-watch(() => [app.model.args.numerators, app.model.args.denominator], (_) => {
-  if (!app.model.ui.comparison && (comparisonOptions.value.length !== 0)) {
-    app.model.ui.comparison = comparisonOptions.value[0].value;
-  }
-});
-
 // Make sure numerator and denominator are reset when contrast factor is changed
 watch(() => [app.model.args.contrastFactor], (_) => {
   app.model.args.numerators = [];
@@ -123,17 +105,8 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
 
 <template>
   <PlBlockPage>
-    <template #title>Differential Clonotype Abundance</template>
+    <template #title>Differential Abundance</template>
     <template #append>
-      <PlDropdown
-        v-model="app.model.ui.comparison"
-        :options="comparisonOptions"
-        label="Comparison" :style="{ width: '150' }"
-      >
-        <template #tooltip>
-          Select the specific Numerator - vs - Denominator comparison to be shown in table and plots
-        </template>
-      </PlDropdown>
       <PlBtnGhost @click.stop="showSettings">
         Settings
         <template #append>
@@ -148,6 +121,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
       <PlAgDataTableV2
         v-model="app.model.ui.tableState"
         :settings="tableSettings"
+        not-ready-text="Data is not computed"
         show-columns-panel
         show-export-button
         disable-filters-panel

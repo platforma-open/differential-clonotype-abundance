@@ -5,6 +5,7 @@ assets:= import("@platforma-sdk/workflow-tengo:assets")
 xsv := import("@platforma-sdk/workflow-tengo:pframes.xsv")
 pframes := import("@platforma-sdk/workflow-tengo:pframes")
 render := import("@platforma-sdk/workflow-tengo:render")
+ll := import("@platforma-sdk/workflow-tengo:ll")
 
 pfErrorLogsConv := import(":pf-de-errors-conv")
 diffAnalysisTpl := assets.importTemplate(":diffAnalysis")
@@ -37,6 +38,16 @@ wf.body(func(args) {
 	denominator := string(args.denominator)
 	log2FcThreshold := args.log2FcThreshold
 	pAdjThreshold := args.pAdjThreshold
+
+	// Get type of input
+	inputType := undefined
+	if (countsSpec.axesSpec[1].name == "pl7.app/vdj/clonotypeKey") {
+		inputType = "clonotype"
+	} else if (countsSpec.axesSpec[1].name == "pl7.app/rna-seq/geneId") {
+		inputType = "gene"
+	} else {
+		ll.panic("Not yet supported input data. Please contact Milaboratories to include it:\n%v", countsSpec)
+	}
 
 	// Set default conversion memory and CPU
 	defaultConvMem := "16GiB"
@@ -84,7 +95,8 @@ wf.body(func(args) {
 			log2FcThreshold: log2FcThreshold,
 			pAdjThreshold: pAdjThreshold,
 			defaultConvMem: defaultConvMem,
-			defaultConvCpu: defaultConvCpu
+			defaultConvCpu: defaultConvCpu,
+			inputType: inputType
 		},
 		metaInputs: {
 			blockId: blockId
@@ -92,13 +104,15 @@ wf.body(func(args) {
 	})
 
 	// Gather results from continueCheck template
-	degPF := diffAnalysis.output("degPF", 24 * 60 * 60 * 1000)
-	regDirPF := diffAnalysis.output("regDirPF", 24 * 60 * 60 * 1000)
-	topDegPF := diffAnalysis.output("topDegPF", 24 * 60 * 60 * 1000)
+	degPF := diffAnalysis.output("degPF")
+	regDirPF := diffAnalysis.output("regDirPF")
+	topDegPF := diffAnalysis.output("topDegPF")
+	contrastExport := diffAnalysis.output("contrastExport")
 
 	exports := {
 		DEG: degPF,
-		regDir: regDirPF
+		regDir: regDirPF,
+		contrastExport: contrastExport
 	}
 
 	return {

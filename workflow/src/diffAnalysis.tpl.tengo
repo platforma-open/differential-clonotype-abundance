@@ -7,11 +7,26 @@ assets := import("@platforma-sdk/workflow-tengo:assets")
 pframes := import("@platforma-sdk/workflow-tengo:pframes")
 xsv := import("@platforma-sdk/workflow-tengo:pframes.xsv")
 pSpec := import("@platforma-sdk/workflow-tengo:pframes.spec")
+pt := import("@platforma-sdk/workflow-tengo:pt")
+json := import("json")
 
 topTablePfconvParamsLib := import(":top_table_pfconv_params")
 dcaPfconvParamsLib := import(":dca_pfconv_params")
-json := import("json")
 
+mapToPValueData := func(map) {
+	data := {}
+	for key, value in map {
+		data[json.encode([key])] = value
+	}
+	result := {
+		keyLength: 1,
+		data: data
+	}
+	return result
+}
+createJsonPColumnData := func(data) {
+	return smart.createValueResource({ Name: "PColumnData/Json", Version: "1" }, data)
+}
 
 self.validateInputs({
 	"__options__,closed": "",
@@ -26,7 +41,8 @@ self.validateInputs({
 		"log2FcThreshold,omitempty": "number",
 		"pAdjThreshold,omitempty": "number",
 		"defaultConvMem,omitempty": "string",
-		"defaultConvCpu,omitempty": "number"
+		"defaultConvCpu,omitempty": "number",
+		"inputType,omitempty": "string"
 	},
 	metaInputs: {
 		"__options__,closed": "",
@@ -34,7 +50,7 @@ self.validateInputs({
 	}
 })
 
-self.defineOutputs("degPF", "regDirPF", "topDegPF")
+self.defineOutputs("degPF", "regDirPF", "topDegPF", "contrastExport")
 
 self.body(func(inputs) {
 	degPF := {}
@@ -46,7 +62,19 @@ self.body(func(inputs) {
 	denominator := string(inputs.denominator)
 	log2FcThreshold := inputs.params.log2FcThreshold
 	pAdjThreshold := inputs.params.pAdjThreshold
+	inputType := inputs.params.inputType
 	blockId := inputs.metaInputs.blockId
+	countsSpec := inputs.allCounts.spec
+
+	software := undefined
+	degImportParams := undefined
+	species := undefined
+	if inputType == "gene" {
+		species = countsSpec.axesSpec[1].domain["pl7.app/species"]
+		software = assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:gene-deseq")
+	} else if inputType == "clonotype" {
+		software = assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:clonotype-deseq")
+	}
 	
 	if string(inputs.continueOrNot.getData()) != "continue" {
 		// If matrix is not full rank return empty objects
@@ -63,16 +91,20 @@ self.body(func(inputs) {
 		regDirPframeBuilder := pframes.pFrameBuilder()
 		topDegPframeBuilder := pframes.pFrameBuilder()
 
-		countsSpec := inputs.allCounts.spec
-
 		// convert PColumns to csv
 		csvCounts := xsv.exportFrame([inputs.allCounts], "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
 
 		// Create PFrames for DEG, regulation direction and topTable
+		wf := pt.workflow().cpu(1).mem("2GiB")
+		dfsDeg := []
+		dfsTopTable := []
+		contrastMap := {}
 		for numerator in inputs.numerators {
 			numerator = string(numerator)
-			diffAbundance := exec.builder().
-					software(assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:main")).
+			contrastMap[numerator + " vs " + denominator] = numerator + " vs " + denominator
+			// Add common arguments
+			diffExec := exec.builder().
+					software(software).
 					arg("-c").arg("rawCounts.csv").
 					arg("-m").arg("covariates.csv").
 					arg("-t").arg(contrastFactor.spec.annotations["pl7.app/label"]). 
@@ -80,110 +112,108 @@ self.body(func(inputs) {
 					arg("-d").arg(string(denominator)).
 					arg("-o").arg("topTable.csv").
 					arg("-f").arg(string(log2FcThreshold)).
-					arg("-p").arg(string(pAdjThreshold)).
-					arg("--values_column").arg(countsSpec.annotations["pl7.app/label"]).
-					arg("--IDs_column").arg(countsSpec.axesSpec[1].annotations["pl7.app/label"]).
-					arg("--min_counts").arg("1").
-					// @TODO: improve filter, right now is min_counts in at least one sample
-					// fraction_for_filter value is set to at least 1 in R code
-					arg("--fraction_for_filter").arg("0.01").
+					arg("-p").arg(string(pAdjThreshold))
+
+			// Gene specific arguments
+			if inputType == "gene" {
+				diffExec.arg("-s").arg(species)
+
+			// Clonotype specific arguments
+			} else if inputType == "clonotype" {
+				// @TODO: improve filter, right now is min_counts in at least one sample
+				// fraction_for_filter value is set to at least 1 in R code
+				diffExec.arg("--fraction_for_filter").arg("0.01").
+				arg("--values_column").arg(countsSpec.annotations["pl7.app/label"]).
+				arg("--IDs_column").arg(countsSpec.axesSpec[1].annotations["pl7.app/label"]).
+				arg("--min_counts").arg("1")
+			}
+
+			// Files arguments
+			diffExec = diffExec.
 					addFile("rawCounts.csv", csvCounts).
 					addFile("covariates.csv", inputs.csvCovariates).
 					saveFile("topTable.csv").
 					saveFile("DEG.csv").
-					printErrStreamToStdout().
-					saveStdoutContent().
-					cache(24 * 60 * 60 * 1000).
 					run()
+
+			dfsDeg += [wf.frame(diffExec.getFile("DEG.csv"), {xsvType: "csv", inferSchema: false})]
+			dfsTopTable += [wf.frame(diffExec.getFile("topTable.csv"), {xsvType: "csv", inferSchema: false})]
+		}
+
+		// Concatenate all DEG and topTable files
+		concatenatedDeg := pt.concat(dfsDeg)
+		concatenatedDeg.save("concatenated_output_Deg.csv")
+		concatenatedTopTable := pt.concat(dfsTopTable)
+		concatenatedTopTable.save("concatenated_output_topTable.csv")
+		ptablerResult := wf.run()
 					
-			topTableImportParams := topTablePfconvParamsLib.getColumns(countsSpec,
-																	log2FcThreshold,
-																	pAdjThreshold)
-			topTablePf := xsv.importFile(diffAbundance.getFile("topTable.csv"), "csv", topTableImportParams, 
-																// This changes output format from default to per column
-																// So key will be column name and values spec and data
-																{splitDataAndSpec: true, mem: defaultConvMem, cpu: defaultConvCpu})
+		topTableImportParams := topTablePfconvParamsLib.getColumns(countsSpec, inputType,
+																log2FcThreshold,
+																pAdjThreshold)
+		topTablePf := xsv.importFile(ptablerResult.getFile("concatenated_output_topTable.csv"), "csv", topTableImportParams, 
+															// This changes output format from default to per column
+															// So key will be column name and values spec and data
+															{splitDataAndSpec: true, mem: defaultConvMem, cpu: defaultConvCpu})
 
-			// Add DEG export with specific import params. Adding new csv output to script with only DEGs and logFC
-			degImportParams := dcaPfconvParamsLib.getColumns(countsSpec)
-			DegPf := xsv.importFile(diffAbundance.getFile("DEG.csv"), "csv", degImportParams, {mem: defaultConvMem, cpu: defaultConvCpu})
+		// Add DEG export with specific import params. Adding new csv output to script with only DEGs and logFC
+		degImportParams = dcaPfconvParamsLib.getColumns(countsSpec, blockId, species)
+		DegPf := xsv.importFile(ptablerResult.getFile("concatenated_output_Deg.csv"), "csv", degImportParams, {mem: defaultConvMem, cpu: defaultConvCpu})
 
-			trace := pSpec.makeTrace(countsSpec,
-				{type: "milaboratories.differential-clonotype-abundance", id: blockId, importance: 30, 
-				label: "DCA - " + numerator + "/" + denominator + " (log2FC: " + log2FcThreshold + ", pAdj: " + pAdjThreshold + ")"}
-			)
-			
-			comparison := numerator + " - vs - " + denominator
+		trace := pSpec.makeTrace(countsSpec,
+			{type: "milaboratories.differential-analysis", importance: 30, 
+			label: "DA - Denominator: " + denominator + " (log2FC: " + log2FcThreshold + ", pAdj: " + pAdjThreshold + ")"}
+		)
 
-			for columnName, value in topTablePf { 
-				columnSpec := copy(value.spec)
-				columnSpec.axesSpec[0].domain["pl7.app/differentialAbundance/comparison"] = comparison
-				columnData := value.data
-				topDegPframeBuilder.add(
-					numerator + " - " + columnName,
-					trace.inject(columnSpec),
-					columnData
-
-				)
-			}
-
-			// Get runID label
-			runIdLabel := countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
-			if runIdLabel == undefined {
-				runIdLabel = "pl7.app/vdj/vdjImport"
-			} else {
-				runIdLabel = "pl7.app/vdj/clonotypingRunId"
-			}
-		
-
-			degPframeBuilder.add(
-				numerator,
-				trace.inject({
-					kind: "PColumn",
-					name: "pl7.app/differentialAbundance/DCA",
-					domain: {
-						runIdLabel: countsSpec.axesSpec[1].domain[runIdLabel],
-						"pl7.app/differentialAbundance/comparison": comparison
-					},
-					valueType: "Double",
-					annotations: {
-						"pl7.app/label": comparison + " (log2FC)",
-						"pl7.app/isAbundance": "true",
-						"pl7.app/table/visibility": "default",
-						"pl7.app/table/orderPriority": "85000"
-					},
-					axesSpec: [
-						countsSpec.axesSpec[1]
-						]
-				}),
-				DegPf["log2foldchange.data"]
-			)
-
-			regDirPframeBuilder.add(
-				numerator,
-				trace.inject({
-					kind: "PColumn",
-					name: "pl7.app/differentialAbundance/regulationDirection",
-					domain: {
-						runIdLabel: countsSpec.axesSpec[1].domain[runIdLabel],
-						"pl7.app/differentialAbundance/comparison": comparison
-					},
-					valueType: "String",
-					annotations: {
-						"pl7.app/label": comparison + " (UP\\Down-regulated clonotype list)",
-						"pl7.app/isAbundance": "true",
-						"pl7.app/table/visibility": "optional",
-						"pl7.app/table/orderPriority": "84000"
-
-					},
-					axesSpec: [
-						countsSpec.axesSpec[1]
-						]
-				}),
-				DegPf["regulationDirection.data"]
-			)
+		// Create contrast label Pcolumn
+		field := undefined
+		if species == undefined {
+			field = "differentialAbundance"
+		} else {
+			field = "rna-seq"
+		}
+		contrastExport := {
+			spec: {
+				kind: "PColumn",
+				name: "pl7.app/label",
+				valueType: "String",
+				annotations: {
+					"pl7.app/label": "Contrast",
+					"pl7.app/isLabel": "true"
+				},
+				axesSpec: [{
+						name: "pl7.app/" + field + "/contrastGroup",
+						type: "String",
+						domain: {
+							"pl7.app/blockId": blockId
+						},
+						annotations: {
+							"pl7.app/label": "Contrast"
+						}
+				}]
+			},
+			data: createJsonPColumnData(json.encode(mapToPValueData(contrastMap)))
 		}
 		
+		for columnName, value in topTablePf { 
+			columnData := value.data
+			topDegPframeBuilder.add(
+				columnName,
+				trace.inject(value.spec),
+				columnData
+			)
+		}
+
+		degPframeBuilder.add(
+			"Log2FC",
+			trace.inject(DegPf["log2foldchange.spec"]),
+			DegPf["log2foldchange.data"]
+		)
+
+		regDirPframeBuilder.add(
+			"Regulation Direction",
+			trace.inject(DegPf["regulationDirection.spec"]),
+			DegPf["regulationDirection.data"]
+		)
 
 		// Build the final PFrames
 		degPF = degPframeBuilder.build()
@@ -193,7 +223,8 @@ self.body(func(inputs) {
 		return {
 			degPF: degPF,
 			regDirPF: regDirPF,
-			topDegPF: pframes.exportFrame(topDegPF)
+			topDegPF: pframes.exportFrame(topDegPF),
+			contrastExport: contrastExport
 		}
 	} 
 })

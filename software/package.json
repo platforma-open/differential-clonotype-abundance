@@ -12,27 +12,51 @@
   },
   "block-software": {
     "entrypoints": {
-      "main": {
+      "clonotype-deseq": {
         "binary": {
           "artifact": {
             "type": "R",
             "registry": "platforma-open",
             "environment": "@platforma-open/milaboratories.runenv-r-differential-expression:main",
-            "root": "./src/deseq2"
+            "root": "./src/deseq2-clonotype"
           },
           "cmd": [
             "Rscript",
-            "{pkg}/run_onlyDESeq2.R"
+            "{pkg}/clonotype_deseq2.R"
           ]
         },
         "docker": {
           "artifact": {
             "type": "docker",
-            "context": "./src/deseq2",
+            "context": "./src/deseq2-clonotype",
             "dockerfile": "Dockerfile"
           },
           "cmd": [
-            "/app/run_onlyDESeq2.R"
+            "/app/clonotype_deseq2.R"
+          ]
+        }
+      },
+      "gene-deseq": {
+        "binary": {
+          "artifact": {
+            "type": "R",
+            "registry": "platforma-open",
+            "environment": "@platforma-open/milaboratories.runenv-r-differential-expression:main",
+            "root": "./src/deseq2-gene"
+          },
+          "cmd": [
+            "Rscript",
+            "{pkg}/gene_deseq2.R"
+          ]
+        },
+        "docker": {
+          "artifact": {
+            "type": "docker",
+            "context": "./src/deseq2-gene",
+            "dockerfile": "Dockerfile"
+          },
+          "cmd": [
+            "/app/gene_deseq2.R"
           ]
         }
       },

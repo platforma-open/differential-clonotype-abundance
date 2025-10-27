@@ -1,42 +1,116 @@
 ll := import("@platforma-sdk/workflow-tengo:ll")
 
-getColumns := func(countsSpec) {
-	return {
-		"axes": [
+getColumns := func(countsSpec, blockId, species) {
+	field := undefined
+	secondAxisLabel := undefined
+	runIdLabel := undefined
+	if species == undefined {
+		field = "differentialAbundance"
+		secondAxisLabel = countsSpec.axesSpec[1].annotations["pl7.app/label"]
+		// Get runID label
+		runIdLabel = countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
+		if runIdLabel == undefined {
+			runIdLabel = "pl7.app/vdj/vdjImport"
+		} else {
+			runIdLabel = "pl7.app/vdj/clonotypingRunId"
+		}
+	} else {
+		field = "rna-seq"
+		secondAxisLabel = "EnsemblId"
+	}
+
+	// Prepare Axis
+	axes := [
 			{
-				"column": countsSpec.axesSpec[1].annotations["pl7.app/label"],
-				"spec": countsSpec.axesSpec[1]
-			}
-			],
-		"columns": [
-			{
-				"column": "log2FoldChange",
-				"id": "log2foldchange",
-				"allowNA": true,
-				"spec": {
-					"name": "pl7.app/differentialAbundance/log2foldchange",
-					"valueType": "Double",
-					"annotations": {
-						"pl7.app/label": "Log2FC",
-						"pl7.app/table/orderPriority": "60"
+				column: "Contrast",
+				id: "contrast",
+				allowNA: false,
+				spec: {
+					name: "pl7.app/" + field + "/contrastGroup",
+					type: "String",
+					domain: {
+						"pl7.app/blockId": blockId
+					},
+					annotations: {
+						"pl7.app/label": "Contrast"
 					}
 				}
 			},
 			{
-				"column": "Regulation",
-				"id": "regulationDirection",
-				"spec": {
-					"name": "pl7.app/differentialAbundance/regulationDirection",
-					"valueType": "String",
-					"annotations": {
-						"pl7.app/label": "Regulation direction",
+				column: secondAxisLabel,
+				spec: countsSpec.axesSpec[1]
+			}
+			]
+
+	// Prepare Columns
+	columns := []
+	colFC := {
+				column: "log2FoldChange",
+				id: "log2foldchange",
+				allowNA: true,
+				spec: {
+					name: "pl7.app/" + field + "/log2foldchange",
+					valueType: "Double",
+					domain: {},
+					annotations: {
+						"pl7.app/label": "Log2FC",
+						"pl7.app/table/hValue": "true",
+						// This allows us to select this Pcolumn to use it as filtering
+						// in this case to keep only genes appearing in this list
+						"pl7.app/isSubset": "true",
+						"pl7.app/table/orderPriority": "60",
+						"pl7.app/format": ".2f"
+					}
+				}
+			}
+	colSymbol := {
+				column: "SYMBOL",
+				id: "genesymbol",
+				allowNA: true,
+				spec: {
+					name: "pl7.app/rna-seq/genesymbol",
+					valueType: "String",
+					annotations: {
+						"pl7.app/label": "Gene symbol",
+						"pl7.app/table/orderPriority": "80"
+					}
+				}
+			}
+	colReg := {
+				column: "Regulation",
+				id: "regulationDirection",
+				spec: {
+					name: "pl7.app/" + field + "/regulationDirection",
+					valueType: "String",
+					domain: {},
+					annotations: {
+						"pl7.app/label": "Regulation direction (Up\\Down\\NS)",
 						"pl7.app/table/orderPriority": "5"
 					}
 				}
 			}
-			],
-		"storageFormat": "Parquet",
-		"partitionKeyLength": 0
+
+	// In RNA case we include species in domain of FC and regulation column
+	// We also add a gene symbol column
+	if species != undefined {
+		colFC.spec.domain["pl7.app/species"] = species
+		colReg.spec.domain["pl7.app/species"] = species
+		columns += [colSymbol]
+	} else {
+		colFC.spec.domain[runIdLabel] = countsSpec.axesSpec[1].domain[runIdLabel]
+		colReg.spec.domain[runIdLabel] = countsSpec.axesSpec[1].domain[runIdLabel]
+	}
+
+	columns = columns + [
+			colFC,
+			colReg
+			]
+
+	return {
+		axes: axes,
+		columns: columns,
+		storageFormat: "Parquet",
+		partitionKeyLength: 1
 	}
 }
 

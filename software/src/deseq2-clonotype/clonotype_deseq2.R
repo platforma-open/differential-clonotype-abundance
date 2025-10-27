@@ -177,6 +177,10 @@ res_df <- res_df[, c(
   ))
 )]
 
+# Add contrast column
+contrast_label <- paste0(opt$numerator, " vs ", opt$denominator)
+res_df$Contrast <- contrast_label
+
 # Save topTable as csv
 write.csv(res_df, opt$output, row.names = FALSE)
 cat("Full results saved to", opt$output, "\n")
@@ -185,7 +189,7 @@ cat("Full results saved to", opt$output, "\n")
 # Filter DEGs with adjusted p-value < p_threshold and absolute log2FoldChange > fc_threshold
 deg_df <- res_df[
   res_df$padj <= opt$p_threshold & abs(res_df$log2FoldChange) >= opt$fc_threshold,
-  c(ids_col, "log2FoldChange", "Regulation")
+  c(ids_col, "Contrast", "log2FoldChange", "Regulation")
 ]
 # Filter out counts without ID
 deg_df <- deg_df[!is.na(deg_df[ids_col]), ]

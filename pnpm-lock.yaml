@@ -19,7 +19,7 @@ catalogs:
       specifier: ^1.4.9
       version: 1.4.13
     '@platforma-open/milaboratories.runenv-r-differential-expression':
-      specifier: ^1.0.6
+      specifier: ^1.0.7
       version: 1.0.7
     '@platforma-open/milaboratories.software-small-binaries':
       specifier: ^1.15.23

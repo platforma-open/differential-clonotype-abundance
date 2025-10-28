@@ -2,11 +2,9 @@ ll := import("@platforma-sdk/workflow-tengo:ll")
 
 getColumns := func(countsSpec, blockId, species) {
 	field := undefined
-	secondAxisLabel := undefined
 	runIdLabel := undefined
 	if species == undefined {
 		field = "differentialAbundance"
-		secondAxisLabel = countsSpec.axesSpec[1].annotations["pl7.app/label"]
 		// Get runID label
 		runIdLabel = countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
 		if runIdLabel == undefined {
@@ -16,7 +14,6 @@ getColumns := func(countsSpec, blockId, species) {
 		}
 	} else {
 		field = "rna-seq"
-		secondAxisLabel = "EnsemblId"
 	}
 
 	// Prepare Axis
@@ -37,7 +34,7 @@ getColumns := func(countsSpec, blockId, species) {
 				}
 			},
 			{
-				column: secondAxisLabel,
+				column: countsSpec.axesSpec[1].annotations["pl7.app/label"],
 				spec: countsSpec.axesSpec[1]
 			}
 			]

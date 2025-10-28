@@ -112,7 +112,8 @@ self.body(func(inputs) {
 					arg("-d").arg(string(denominator)).
 					arg("-o").arg("topTable.csv").
 					arg("-f").arg(string(log2FcThreshold)).
-					arg("-p").arg(string(pAdjThreshold))
+					arg("-p").arg(string(pAdjThreshold)).
+					arg("--IDs_column").arg(countsSpec.axesSpec[1].annotations["pl7.app/label"])
 
 			// Gene specific arguments
 			if inputType == "gene" {
@@ -124,7 +125,6 @@ self.body(func(inputs) {
 				// fraction_for_filter value is set to at least 1 in R code
 				diffExec.arg("--fraction_for_filter").arg("0.01").
 				arg("--values_column").arg(countsSpec.annotations["pl7.app/label"]).
-				arg("--IDs_column").arg(countsSpec.axesSpec[1].annotations["pl7.app/label"]).
 				arg("--min_counts").arg("1")
 			}
 
@@ -147,7 +147,7 @@ self.body(func(inputs) {
 		concatenatedTopTable.save("concatenated_output_topTable.csv")
 		ptablerResult := wf.run()
 					
-		topTableImportParams := topTablePfconvParamsLib.getColumns(countsSpec, inputType,
+		topTableImportParams := topTablePfconvParamsLib.getColumns(copy(countsSpec), inputType,
 																log2FcThreshold,
 																pAdjThreshold)
 		topTablePf := xsv.importFile(ptablerResult.getFile("concatenated_output_topTable.csv"), "csv", topTableImportParams, 

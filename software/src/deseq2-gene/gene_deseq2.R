@@ -125,6 +125,11 @@ option_list <- list(
   make_option(c("-p", "--p_threshold"),
     type = "double", default = 0.05,
     help = "Adjusted p-value threshold for significance"
+  ),
+   make_option(c("-i", "--IDs_column"),
+    type = "character",
+    default = "Ensembl Id",
+    help = "Name of column containing Ensembl IDs"
   )
 )
 
@@ -151,6 +156,9 @@ opt$contrast_factor <- make.names(opt$contrast_factor)
 # Filter out samples for which we don't have metadata
 count_long <- count_long[count_long[, "Sample"] %in% rownames(metadata), ]
 
+# Rename some input variables
+ids_col <- opt$IDs_column
+
 # Validate contrast factor
 if (!opt$contrast_factor %in% colnames(metadata)) {
   stop("Contrast factor column not found in metadata")
@@ -169,7 +177,7 @@ count_matrix <- count_long %>%
   pivot_wider(names_from = Sample, values_from = `Raw gene expression`) %>%
   as.data.frame()
 
-rownames(count_matrix) <- count_matrix$`Ensembl Id`
+rownames(count_matrix) <- count_matrix[, ids_col]
 count_matrix <- count_matrix[, -1]
 
 # Filter lowly expressed genes
@@ -194,7 +202,7 @@ res_df <- as.data.frame(res)
 
 # Annotate genes
 res_df <- annotate_results(res_df, opt$species)
-res_df$EnsemblId <- rownames(res_df)
+res_df[ids_col] <- rownames(res_df)
 res_df$minlog10padj <- -log10(res_df$padj)
 res_df$minlog10padj[is.na(res_df$minlog10padj)] <- NA
 
@@ -207,9 +215,9 @@ res_df$Regulation <- ifelse(res_df$log2FoldChange >= opt$fc_threshold, "Up",
 
 # Reorder columns
 res_df <- res_df[, c(
-  "EnsemblId", "SYMBOL", "Regulation",
+  ids_col, "SYMBOL", "Regulation",
   setdiff(colnames(res_df), c(
-    "EnsemblId", "SYMBOL",
+    ids_col, "SYMBOL",
     "Regulation"
   ))
 )]
@@ -225,9 +233,9 @@ cat("Full results saved to", opt$output, "\n")
 # Filter DEGs with adjusted p-value < 0.05 and absolute log2FoldChange > 0.6
 deg_df <- res_df[
   res_df$padj <= opt$p_threshold & abs(res_df$log2FoldChange) >= opt$fc_threshold,
-  c("EnsemblId", "Contrast", "SYMBOL", "log2FoldChange", "Regulation")
+  c(ids_col, "Contrast", "SYMBOL", "log2FoldChange", "Regulation")
 ]
-deg_df <- deg_df[!is.na(deg_df$EnsemblId), ]
+deg_df <- deg_df[!is.na(deg_df[ids_col]), ]
 
 # Save DEG as csv
 # deg_output <- sub("\\.csv$", "_DEG.csv", opt$output)

@@ -14,22 +14,22 @@ const app = useApp();
 
 const multipleSequenceAlignmentOpen = ref(false);
 
-function getDefaultOptions(topTablePcols?: PColumnIdAndSpec[]) {
-  if (!topTablePcols) {
-    return undefined;
-  }
+function getIndex(name: string, pcols: PColumnIdAndSpec[]): number {
+  return pcols.findIndex((p) => p.spec.name === name);
+}
 
-  function getIndex(name: string, pcols: PColumnIdAndSpec[]): number {
-    return pcols.findIndex((p) => p.spec.name === name);
-  }
-
-  // Find out data type of the first column
-  let dataType: 'rna-seq' | 'differentialAbundance';
-  if (getIndex('pl7.app/rna-seq/log2foldchange', topTablePcols) !== -1) {
+// Find out data type of the first column
+let dataType: 'rna-seq' | 'differentialAbundance' | undefined;
+if (app.model.outputs.topTablePcols !== undefined) {
+  if (getIndex('pl7.app/rna-seq/log2foldchange', app.model.outputs.topTablePcols) !== -1) {
     dataType = 'rna-seq';
-  } else if (getIndex('pl7.app/differentialAbundance/log2foldchange', topTablePcols) !== -1) {
+  } else if (getIndex('pl7.app/differentialAbundance/log2foldchange', app.model.outputs.topTablePcols) !== -1) {
     dataType = 'differentialAbundance';
-  } else {
+  }
+}
+
+function getDefaultOptions(dataType: 'rna-seq' | 'differentialAbundance' | undefined, topTablePcols?: PColumnIdAndSpec[]) {
+  if (!topTablePcols || dataType === undefined) {
     return undefined;
   }
 
@@ -80,7 +80,7 @@ function getDefaultOptions(topTablePcols?: PColumnIdAndSpec[]) {
   return defaults;
 }
 
-const defaults = computed(() => getDefaultOptions(app.model.outputs.topTablePcols));
+const defaults = computed(() => getDefaultOptions(dataType, app.model.outputs.topTablePcols));
 
 const selection = ref<PlSelectionModel>({
   axesSpec: [],
@@ -99,6 +99,7 @@ const selection = ref<PlSelectionModel>({
   >
     <template #titleLineSlot>
       <PlBtnGhost
+        v-if="dataType === 'differentialAbundance'"
         icon="dna"
         @click.stop="() => (multipleSequenceAlignmentOpen = true)"
       >
@@ -111,12 +112,14 @@ const selection = ref<PlSelectionModel>({
     width="100%"
     :close-on-outside-click="false"
   >
-    <template #title>Multiple Sequence Alignment</template>
-    <PlMultiSequenceAlignment
-      v-model="app.model.ui.alignmentModel"
-      :sequence-column-predicate="isSequenceColumn"
-      :p-frame="app.model.outputs.msaPf"
-      :selection="selection"
-    />
+    <template v-if="dataType === 'differentialAbundance'" #title>
+      Multiple Sequence Alignment>
+      <PlMultiSequenceAlignment
+        v-model="app.model.ui.alignmentModel"
+        :sequence-column-predicate="isSequenceColumn"
+        :p-frame="app.model.outputs.msaPf"
+        :selection="selection"
+      />
+    </template>
   </PlSlideModal>
 </template>

@@ -203,6 +203,7 @@ res_df <- as.data.frame(res)
 # Annotate genes
 res_df <- annotate_results(res_df, opt$species)
 res_df[ids_col] <- rownames(res_df)
+res_df$SYMBOL <- ifelse(is.na(res_df$SYMBOL), res_df[,ids_col], res_df$SYMBOL)
 res_df$minlog10padj <- -log10(res_df$padj)
 res_df$minlog10padj[is.na(res_df$minlog10padj)] <- NA
 

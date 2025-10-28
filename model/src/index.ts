@@ -86,8 +86,8 @@ export const model = BlockModel.create()
       && (ctx.args.pAdjThreshold !== undefined))
   ))
 
-  .output('countsOptions', (ctx) =>
-    ctx.resultPool.getOptions([
+  .output('countsOptions', (ctx) => {
+    const allOptions = ctx.resultPool.getOptions([
       // Clonotyoe input
       {
         axes: [
@@ -106,8 +106,23 @@ export const model = BlockModel.create()
         ],
         annotations: { 'pl7.app/isAbundance': 'true' },
         domain: { 'pl7.app/rna-seq/normalized': 'false' },
-      }], { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false }),
-  )
+      }], { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false });
+
+    // Filter out single-cell and clustered data for now
+    return allOptions.filter((option) => {
+      const pColumnSpec = ctx.resultPool.getSpecByRef(option.ref);
+      if (!pColumnSpec || !isPColumnSpec(pColumnSpec)) {
+        return true; // Keep non-p-column options
+      }
+
+      const hasScClonotypeKey = pColumnSpec.axesSpec?.length >= 2
+        && (pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/scClonotypeKey'
+          || pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/clusterId'
+        );
+
+      return !hasScClonotypeKey;
+    });
+  })
 
   .output('metadataOptions', (ctx) =>
     ctx.resultPool.getOptions((spec) => isPColumnSpec(spec) && spec.name === 'pl7.app/metadata'),

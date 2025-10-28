@@ -108,11 +108,22 @@ wf.body(func(args) {
 	regDirPF := diffAnalysis.output("regDirPF")
 	topDegPF := diffAnalysis.output("topDegPF")
 	contrastExport := diffAnalysis.output("contrastExport")
+	degPF_clonotype := diffAnalysis.output("degPF_clonotype")
+	regDirPF_clonotype := diffAnalysis.output("regDirPF_clonotype")
 
-	exports := {
-		DEG: degPF,
-		regDir: regDirPF,
-		contrastExport: contrastExport
+	// @TODO: After fixing downstream block usage for axis based contrast remove this condition
+	exports := {}
+	if inputType == "clonotype" {
+		exports = {
+			DEG: degPF_clonotype,
+			regDir: regDirPF_clonotype
+		}
+	} else {
+		exports = {
+			DEG: degPF,
+			regDir: regDirPF,
+			contrastExport: contrastExport
+		}
 	}
 
 	return {

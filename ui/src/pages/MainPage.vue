@@ -25,6 +25,32 @@ const app = useApp();
 const tableSettings = usePlDataTableSettingsV2({
   model: () => app.model.outputs.pt,
   sheets: () => app.model.outputs.sheets,
+  filtersConfig: ({ column }) => {
+    // Apply default filters based on column names
+    const columnName = column.spec.name;
+
+    // Filter for log2foldchange columns (>= log2FcThreshold)
+    if (columnName.endsWith('/log2foldchange')) {
+      return {
+        default: {
+          type: 'number_greaterThanOrEqualTo',
+          reference: app.model.args.log2FcThreshold,
+        },
+      };
+    }
+
+    // Filter for padj columns (<= pAdjThreshold)
+    if (columnName.endsWith('/padj')) {
+      return {
+        default: {
+          type: 'number_lessThanOrEqualTo',
+          reference: app.model.args.pAdjThreshold,
+        },
+      };
+    }
+
+    return {};
+  },
 });
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
@@ -124,7 +150,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
         not-ready-text="Data is not computed"
         show-columns-panel
         show-export-button
-        disable-filters-panel
+        no-rows-text="All results were filtered out by the defined threshold parameters"
       />
     </ErrorBoundary>
     <PlSlideModal v-model="settingsAreShown">

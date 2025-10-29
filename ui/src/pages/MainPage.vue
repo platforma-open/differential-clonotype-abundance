@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PFrameImpl } from '@platforma-sdk/model';
+import { createPlDataTableStateV2, PFrameImpl } from '@platforma-sdk/model';
 import {
   PlAccordionSection,
   PlAgDataTableV2,
@@ -102,6 +102,11 @@ const denominatorOptions = computed(() => {
 watch(() => [app.model.args.contrastFactor], (_) => {
   app.model.args.numerators = [];
   app.model.args.denominator = undefined;
+});
+
+// Reset table state when thresholds change to re-apply default filters
+watch(() => [app.model.outputs.pt], () => {
+  app.model.ui.tableState = createPlDataTableStateV2();
 });
 
 // Get error logs

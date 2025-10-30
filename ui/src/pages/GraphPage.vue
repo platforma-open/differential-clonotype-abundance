@@ -112,14 +112,12 @@ const selection = ref<PlSelectionModel>({
     width="100%"
     :close-on-outside-click="false"
   >
-    <template v-if="dataType === 'differentialAbundance'" #title>
-      Multiple Sequence Alignment>
-      <PlMultiSequenceAlignment
-        v-model="app.model.ui.alignmentModel"
-        :sequence-column-predicate="isSequenceColumn"
-        :p-frame="app.model.outputs.msaPf"
-        :selection="selection"
-      />
-    </template>
+    <template #title>Multiple Sequence Alignment</template>
+    <PlMultiSequenceAlignment
+      v-model="app.model.ui.alignmentModel"
+      :sequence-column-predicate="isSequenceColumn"
+      :p-frame="app.model.outputs.msaPf"
+      :selection="selection"
+    />
   </PlSlideModal>
 </template>

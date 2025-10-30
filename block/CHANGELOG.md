@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.3.10
+
+### Patch Changes
+
+- ed348fc: update SDK
+
 ## 1.3.9
 
 ### Patch Changes

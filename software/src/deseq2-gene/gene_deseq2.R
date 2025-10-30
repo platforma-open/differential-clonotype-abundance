@@ -5,7 +5,84 @@ suppressMessages(library("optparse"))
 suppressMessages(library("tidyr"))
 suppressMessages(library("dplyr"))
 suppressMessages(library("DESeq2"))
+suppressMessages(library("AnnotationDbi"))
 
+# Function to load species specific annotation package
+load_annotation_package <- function(species) {
+  species_to_package <- list(
+    "homo-sapiens" = "org.Hs.eg.db",
+    "mus-musculus" = "org.Mm.eg.db",
+    "rattus-norvegicus" = "org.Rn.eg.db",
+    "danio-rerio" = "org.Dr.eg.db",
+    "drosophila-melanogaster" = "org.Dm.eg.db",
+    "arabidopsis-thaliana" = "org.At.tair.db",
+    "saccharomyces-cerevisiae" = "org.Sc.sgd.db",
+    "caenorhabditis-elegans" = "org.Ce.eg.db",
+    "gallus-gallus" = "org.Gg.eg.db",
+    "bos-taurus" = "org.Bt.eg.db",
+    "sus-scrofa" = "org.Ss.eg.db",
+    "test-species" = "org.Mm.eg.db"
+  )
+
+  if (!(species %in% names(species_to_package))) {
+    stop(
+      "Unsupported species name. Supported species are: ",
+      paste(names(species_to_package), collapse = ", ")
+    )
+  }
+
+  annotation_package <- species_to_package[[species]]
+
+  suppressMessages(library(annotation_package, character.only = TRUE))
+  return(annotation_package)
+}
+
+# Function to annotate genes
+annotate_results <- function(res_df, species) {
+  annotation_package <- load_annotation_package(species)
+
+  # Strip version numbers from Ensembl IDs
+  rownames(res_df) <- sub("\\.\\d+$", "", rownames(res_df))
+  ensembl_ids <- rownames(res_df)
+
+  # Get all valid Ensembl IDs
+  valid_ensembl_ids <- keys(get(annotation_package), keytype = "ENSEMBL")
+
+  # Filter Ensembl IDs
+  matched_ids <- ensembl_ids[ensembl_ids %in% valid_ensembl_ids]
+
+  # Determine column to map based on species
+  if (species == "saccharomyces-cerevisiae") {
+    column_to_map <- "COMMON"
+    key_type <- "ENSEMBL"
+  } else if (species == "arabidopsis-thaliana") {
+    column_to_map <- "SYMBOL"
+    key_type <- "TAIR"
+  } else {
+    column_to_map <- "SYMBOL"
+    key_type <- "ENSEMBL"
+  }
+
+  # Map IDs to symbols
+  matched_symbols <- mapIds(
+    get(annotation_package),
+    keys = matched_ids,
+    column = column_to_map,
+    keytype = key_type,
+    multiVals = "first"
+  )
+
+  # Create symbol column for the results
+  res_df$SYMBOL <- sapply(ensembl_ids, function(id) {
+    if (id %in% names(matched_symbols)) {
+      return(matched_symbols[[id]])
+    } else {
+      return(NA)
+    }
+  })
+
+  return(res_df)
+}
 
 # DESeq2 script using above declared functions
 option_list <- list(
@@ -32,6 +109,10 @@ option_list <- list(
     help = "Denominator level for contrast factor",
     metavar = "character"
   ),
+  make_option(c("-s", "--species"),
+    type = "character", default = "homo-sapiens",
+    help = "Species for annotation", metavar = "character"
+  ),
   make_option(c("-o", "--output"),
     type = "character",
     default = "deseq2_results.csv",
@@ -45,44 +126,15 @@ option_list <- list(
     type = "double", default = 0.05,
     help = "Adjusted p-value threshold for significance"
   ),
-  make_option(c("-v", "--values_column"),
+   make_option(c("-i", "--IDs_column"),
     type = "character",
-    default = "Number of UMIs",
-    help = "Name of column containing counts"
-  ),
-  make_option(c("-i", "--IDs_column"),
-    type = "character",
-    default = "Clonotype key",
-    help = "Name of column containing gene/clonotype IDs"
-  ),
-  make_option(c("-x", "--min_counts"),
-    type = "double", default = 5,
-    help = "minimum number of counts in fraction of samples defined by fraction_for_filter"
-  ),
-  make_option(c("-y", "--fraction_for_filter"),
-    type = "double", default = 0.9,
-    help = "Fraction of samples that should have more than X min_counts to be accepted in analysis"
+    default = "Ensembl Id",
+    help = "Name of column containing Ensembl IDs"
   )
 )
 
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
-
-# Print passed arguments for debugging
-cat("--- Script Arguments ---\n")
-cat("Count matrix path:", opt$count_matrix, "\n")
-cat("Metadata path:", opt$metadata, "\n")
-cat("Contrast factor column:", opt$contrast_factor, "\n")
-cat("Numerator:", opt$numerator, "\n")
-cat("Denominator:", opt$denominator, "\n")
-cat("Output file:", opt$output, "\n")
-cat("Log2 Fold Change Threshold:", opt$fc_threshold, "\n")
-cat("Adjusted P-value Threshold:", opt$p_threshold, "\n")
-cat("Values column name:", opt$values_column, "\n")
-cat("IDs column name:", opt$IDs_column, "\n")
-cat("Minimum counts filter:", opt$min_counts, "\n")
-cat("Sample fraction for filter:", opt$fraction_for_filter, "\n")
-cat("------------------------\n\n")
 
 if (is.null(opt$count_matrix) || is.null(opt$metadata) || is.null(opt$contrast_factor) || is.null(opt$numerator) || is.null(opt$denominator)) {
   stop("Missing required arguments")
@@ -91,10 +143,11 @@ if (is.null(opt$count_matrix) || is.null(opt$metadata) || is.null(opt$contrast_f
 # Load count matrix and covariates metadata
 count_long <- read.csv(opt$count_matrix, check.names = FALSE)
 metadata <- read.table(opt$metadata,
-                row.names = 1,
-                sep=",",
-                header=TRUE,
-                colClasses='factor')
+  row.names = 1,
+  sep = ",",
+  header = TRUE,
+  colClasses = "factor"
+)
 
 # Rename contrast factor removing weird characters
 # This is done by default at the time of reading the metadata in the table
@@ -104,10 +157,7 @@ opt$contrast_factor <- make.names(opt$contrast_factor)
 count_long <- count_long[count_long[, "Sample"] %in% rownames(metadata), ]
 
 # Rename some input variables
-values_col <- opt$values_column
 ids_col <- opt$IDs_column
-min_counts <- opt$min_counts
-filter_fraction <- opt$fraction_for_filter
 
 # Validate contrast factor
 if (!opt$contrast_factor %in% colnames(metadata)) {
@@ -124,40 +174,36 @@ colnames(metadata) <- make.names(colnames(metadata))
 
 # Transform long format to wide format
 count_matrix <- count_long %>%
-  pivot_wider(names_from = Sample, values_from = all_of(values_col)) %>%
+  pivot_wider(names_from = Sample, values_from = `Raw gene expression`) %>%
   as.data.frame()
 
-# Set Id columns as row name and remove it
 rownames(count_matrix) <- count_matrix[, ids_col]
 count_matrix <- count_matrix[, -1]
 
-# Convert NA values to zero
-count_matrix[is.na(count_matrix)] <- 0
+# Filter lowly expressed genes
+filter_threshold <- 10
+min_samples <- floor(ncol(count_matrix) / 2)
 
-# Apply filter by low counts (at least filter by values in one sample)
-min_samples <- max(floor(ncol(count_matrix) * filter_fraction), 1)
-count_matrix <- count_matrix[rowSums(count_matrix >= min_counts) >= min_samples, ]
-
-# For differentialclonotype abundance we add 1 as minimum clonotype count (after filtering)
-# count_matrix <- replace(count_matrix, count_matrix == 0, 1)
-count_matrix <- count_matrix + 1
+# Apply the filter
+count_matrix <- count_matrix[rowSums(count_matrix >= filter_threshold) >= min_samples, ]
 
 # Prepare DESeq2 dataset
-set.seed(42)
 dds <- DESeqDataSetFromMatrix(
   countData = count_matrix,
   colData = metadata,
   design = as.formula(paste("~", paste(colnames(metadata), collapse = " + ")))
 )
-dds <- DESeq(dds, fitType = "local")
+dds <- DESeq(dds)
 
 
 # Extract topTable
 res <- results(dds, contrast = c(make.names(opt$contrast_factor), opt$numerator, opt$denominator))
 res_df <- as.data.frame(res)
 
-# Tidy table
+# Annotate genes
+res_df <- annotate_results(res_df, opt$species)
 res_df[ids_col] <- rownames(res_df)
+res_df$SYMBOL <- ifelse(is.na(res_df$SYMBOL), res_df[,ids_col], res_df$SYMBOL)
 res_df$minlog10padj <- -log10(res_df$padj)
 res_df$minlog10padj[is.na(res_df$minlog10padj)] <- NA
 
@@ -170,26 +216,29 @@ res_df$Regulation <- ifelse(res_df$log2FoldChange >= opt$fc_threshold, "Up",
 
 # Reorder columns
 res_df <- res_df[, c(
-  ids_col, "Regulation",
+  ids_col, "SYMBOL", "Regulation",
   setdiff(colnames(res_df), c(
-    ids_col,
+    ids_col, "SYMBOL",
     "Regulation"
   ))
 )]
 
+# Add contrast column
+contrast_label <- paste0(opt$numerator, " vs ", opt$denominator)
+res_df$Contrast <- contrast_label
+
 # Save topTable as csv
-write.csv(res_df, opt$output, row.names = FALSE)
+write.csv(res_df, opt$output, row.names = FALSE, na = "")
 cat("Full results saved to", opt$output, "\n")
 
-
-# Filter DEGs with adjusted p-value < p_threshold and absolute log2FoldChange > fc_threshold
+# Filter DEGs with adjusted p-value < 0.05 and absolute log2FoldChange > 0.6
 deg_df <- res_df[
   res_df$padj <= opt$p_threshold & abs(res_df$log2FoldChange) >= opt$fc_threshold,
-  c(ids_col, "log2FoldChange", "Regulation")
+  c(ids_col, "Contrast", "SYMBOL", "log2FoldChange", "Regulation")
 ]
-# Filter out counts without ID
 deg_df <- deg_df[!is.na(deg_df[ids_col]), ]
 
-# Save DEC as csv
-write.csv(deg_df, "DEG.csv", row.names = FALSE)
+# Save DEG as csv
+# deg_output <- sub("\\.csv$", "_DEG.csv", opt$output)
+write.csv(deg_df, "DEG.csv", row.names = FALSE, na = "")
 cat("Filtered DEGs saved to", "DEG.csv", "\n")

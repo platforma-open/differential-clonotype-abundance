@@ -8,10 +8,10 @@ packages:
 
 catalog:
   "@platforma-sdk/model": ^1.45.0
-  "@platforma-sdk/ui-vue": ^1.45.0
-  "@platforma-sdk/workflow-tengo": ^5.5.1
+  "@platforma-sdk/ui-vue": ^1.45.5
+  "@platforma-sdk/workflow-tengo": ^5.5.8
   "@platforma-sdk/block-tools": ^2.6.16
-  "@platforma-sdk/test": ^1.45.1
+  "@platforma-sdk/test": ^1.45.9
   "@platforma-sdk/tengo-builder": ^2.3.3
   "@platforma-sdk/package-builder": ^3.10.6
   "@platforma-sdk/eslint-config": ^1.1.0
@@ -21,7 +21,7 @@ catalog:
   "@milaboratories/graph-maker": ^1.1.174
   "@platforma-open/milaboratories.runenv-python-3": ^1.4.9
   "@platforma-open/milaboratories.software-small-binaries": ^1.15.23
-  '@platforma-open/milaboratories.runenv-r-differential-expression': ^1.0.6
+  '@platforma-open/milaboratories.runenv-r-differential-expression': ^1.0.7
   "@platforma-open/milaboratories.runenv-r": ^1.2.18
   "@milaboratories/software-pframes-conv": ^2.2.9
   

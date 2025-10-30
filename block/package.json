@@ -22,12 +22,12 @@
       "ui": "@platforma-open/milaboratories.differential-clonotype-abundance.ui/dist"
     },
     "meta": {
-      "title": "Differential Clonotype Abundance",
+      "title": "Differential Abundance",
       "logo": "file:../logos/block-logo.png",
       "url": "https://github.com/platforma-open/differential-clonotype-abundance",
       "docs": "https://github.com/platforma-open/differential-clonotype-abundance/docs",
       "support": "mailto:support@milaboratories.com",
-      "description": "Identify differentially abundant clonotypes between conditions.",
+      "description": "Identify differentially abundant features between conditions.",
       "longDescription": "file:../docs/description.md",
       "changelog": "file:../CHANGELOG.md",
       "tags": [

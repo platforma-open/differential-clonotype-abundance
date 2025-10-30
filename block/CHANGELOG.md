@@ -1,5 +1,12 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.3.9
+
+### Patch Changes
+
+- Updated dependencies [3fab67e]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.ui@1.9.2
+
 ## 1.3.8
 
 ### Patch Changes

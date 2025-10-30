@@ -3,8 +3,9 @@ ll := import("@platforma-sdk/workflow-tengo:ll")
 getColumns := func(countsSpec, blockId, species) {
 	field := undefined
 	runIdLabel := undefined
+	degName := undefined
 	if species == undefined {
-		field = "differentialAbundance"
+		field = "log2foldchange"
 		// Get runID label
 		runIdLabel = countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
 		if runIdLabel == undefined {
@@ -12,8 +13,10 @@ getColumns := func(countsSpec, blockId, species) {
 		} else {
 			runIdLabel = "pl7.app/vdj/clonotypingRunId"
 		}
+		degName = "log2foldchange"
 	} else {
 		field = "rna-seq"
+		degName = "DEG"
 	}
 
 	// Prepare Axis
@@ -46,7 +49,7 @@ getColumns := func(countsSpec, blockId, species) {
 				id: "log2foldchange",
 				allowNA: true,
 				spec: {
-					name: "pl7.app/" + field + "/log2foldchange",
+					name: "pl7.app/" + field + "/" + degName,
 					valueType: "Double",
 					domain: {},
 					annotations: {

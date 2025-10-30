@@ -3,11 +3,14 @@ math := import("math")
 
 getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 	field := undefined
+	degName := undefined
 	if inputType == "gene" {
 		field = "rna-seq"
 		countsSpec.axesSpec[1].annotations["pl7.app/graph/axis/highCardinality"] = "false"
+		degName = "DEG"
 	} else {
 		field = "differentialAbundance"
+		degName = "log2foldchange"
 	}
 
 	// Define volcano plot significant line cut points
@@ -54,7 +57,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 				id: "log2foldchange",
 				allowNA: true,
 				spec: {
-					name: "pl7.app/" + field + "/log2foldchange",
+					name: "pl7.app/" + field + "/" + degName,
 					valueType: "Double",
 					annotations: {
 						"pl7.app/label": "Log2FC",

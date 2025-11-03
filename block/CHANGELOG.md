@@ -1,5 +1,20 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.4.0
+
+### Minor Changes
+
+- d9759cf: Convert block into general differential analysis block for all data
+- 3516cc5: Merge gene and clonotype differential analyses
+
+### Patch Changes
+
+- Updated dependencies [d9759cf]
+- Updated dependencies [3516cc5]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.workflow@2.6.0
+  - @platforma-open/milaboratories.differential-clonotype-abundance.model@2.6.0
+  - @platforma-open/milaboratories.differential-clonotype-abundance.ui@1.10.0
+
 ## 1.3.10
 
 ### Patch Changes

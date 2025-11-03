@@ -1,5 +1,12 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.15.0
+
+### Minor Changes
+
+- d9759cf: Convert block into general differential analysis block for all data
+- 3516cc5: Merge gene and clonotype differential analyses
+
 ## 1.14.1
 
 ### Patch Changes

@@ -1,5 +1,18 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.6.0
+
+### Minor Changes
+
+- d9759cf: Convert block into general differential analysis block for all data
+- 3516cc5: Merge gene and clonotype differential analyses
+
+### Patch Changes
+
+- Updated dependencies [d9759cf]
+- Updated dependencies [3516cc5]
+  - @platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software@1.15.0
+
 ## 2.5.3
 
 ### Patch Changes

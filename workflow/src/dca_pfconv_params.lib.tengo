@@ -1,6 +1,6 @@
 ll := import("@platforma-sdk/workflow-tengo:ll")
 
-getColumns := func(countsSpec) {
+getColumns := func(countsSpec, inputType) {
 	return {
 		"axes": [
 			{
@@ -17,7 +17,7 @@ getColumns := func(countsSpec) {
 					"name": "pl7.app/differentialAbundance/log2foldchange",
 					"valueType": "Double",
 					"annotations": {
-						"pl7.app/label": "Log2FC",
+						"pl7.app/label": inputType + " Log2FC",
 						"pl7.app/table/orderPriority": "60"
 					}
 				}
@@ -29,7 +29,7 @@ getColumns := func(countsSpec) {
 					"name": "pl7.app/differentialAbundance/regulationDirection",
 					"valueType": "String",
 					"annotations": {
-						"pl7.app/label": "Regulation direction",
+						"pl7.app/label": inputType + " Regulation direction",
 						"pl7.app/table/orderPriority": "5"
 					}
 				}

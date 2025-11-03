@@ -5,14 +5,17 @@ import type {
   PColumnIdAndSpec,
   PFrameHandle,
   PlDataTableStateV2,
+  PlMultiSequenceAlignmentModel,
   PlRef,
   TreeNodeAccessor,
 } from '@platforma-sdk/model';
 import {
   BlockModel,
   createPFrameForGraphs,
+  createPlDataTableSheet,
   createPlDataTableStateV2,
   createPlDataTableV2,
+  getUniquePartitionKeys,
   isPColumnSpec,
 } from '@platforma-sdk/model';
 
@@ -20,7 +23,7 @@ export type UiState = {
   tableState: PlDataTableStateV2;
   graphState: GraphMakerState;
   selectedChain?: string;
-  comparison?: string;
+  alignmentModel: PlMultiSequenceAlignmentModel;
 };
 
 export type BlockArgs = {
@@ -35,16 +38,19 @@ export type BlockArgs = {
 
 // get main Pcols for plot and tables
 function filterPCols(
-  pCols: PColumn<TreeNodeAccessor>[],
-  comparison: string | undefined):
+  pCols: PColumn<TreeNodeAccessor>[]):
   PColumn<TreeNodeAccessor>[] {
   // Allow only log2 FC and -log10 Padjust as options for volcano axis
   pCols = pCols.filter(
     (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
       || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
-      || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection')
-      // Only values associated to selected comparison
-      && col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === comparison,
+      || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection'
+      || col.spec.name === 'pl7.app/differentialAbundance/contrastGroup')
+    || (col.spec.name === 'pl7.app/rna-seq/log2foldchange'
+      || col.spec.name === 'pl7.app/rna-seq/minlog10padj'
+      || col.spec.name === 'pl7.app/rna-seq/regulationDirection'
+      || col.spec.name === 'pl7.app/rna-seq/genesymbol'
+      || col.spec.name === 'pl7.app/rna-seq/contrastGroup'),
   );
   return pCols;
 }
@@ -62,47 +68,60 @@ export const model = BlockModel.create()
   .withUiState<UiState>({
     tableState: createPlDataTableStateV2(),
     graphState: {
-      title: 'Differential clonotype abundance',
+      title: 'Differential abundance',
       template: 'dots',
       currentTab: null,
     },
+    alignmentModel: {},
   })
 
   // Activate "Run" button only after these conditions are satisfied
   .argsValid((ctx) => (
-    (ctx.args.log2FcThreshold !== undefined)
-    && (ctx.args.pAdjThreshold !== undefined)
+    ((ctx.args.countsRef !== undefined)
+      && (ctx.args.covariateRefs !== undefined)
+      && (ctx.args.contrastFactor !== undefined)
+      && (ctx.args.numerators.length > 0)
+      && (ctx.args.denominator !== undefined)
+      && (ctx.args.log2FcThreshold !== undefined)
+      && (ctx.args.pAdjThreshold !== undefined))
   ))
 
-  // User can only select as input UMI count matrices or read count matrices
-  // for cases where we don't have UMI counts
-  // includeNativeLabel and addLabelAsSuffix makes visible the data source dataset
-  // Result: [dataID] / input
   .output('countsOptions', (ctx) => {
-    // First get all UMI count dataset and their block IDs
-    const validUmiOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/uniqueMoleculeCount')
-      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-      , { includeNativeLabel: true, addLabelAsSuffix: true });
-    const umiBlockIds: string[] = validUmiOptions.map((item) => item.ref.blockId);
+    const allOptions = ctx.resultPool.getOptions([
+      // Clonotyoe input
+      {
+        axes: [
+          { name: 'pl7.app/sampleId' },
+          { },
+        ],
+        annotations: { 'pl7.app/isAbundance': 'true',
+          'pl7.app/abundance/normalized': 'false',
+          'pl7.app/abundance/isPrimary': 'true' },
+      },
+      // RNA input
+      {
+        axes: [
+          { name: 'pl7.app/sampleId' },
+          { },
+        ],
+        annotations: { 'pl7.app/isAbundance': 'true' },
+        domain: { 'pl7.app/rna-seq/normalized': 'false' },
+      }], { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false });
 
-    // Then get all read count datasets that don't match blockIDs from UMI counts
-    let validCountOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/readCount')
-      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-      , { includeNativeLabel: true, addLabelAsSuffix: true });
-    validCountOptions = validCountOptions.filter((item) =>
-      !umiBlockIds.includes(item.ref.blockId));
+    // Filter out single-cell and clustered data for now
+    return allOptions.filter((option) => {
+      const pColumnSpec = ctx.resultPool.getSpecByRef(option.ref);
+      if (!pColumnSpec || !isPColumnSpec(pColumnSpec)) {
+        return true; // Keep non-p-column options
+      }
 
-    // Get single cell data counts
-    const validScOptions = ctx.resultPool.getOptions((spec) => isPColumnSpec(spec)
-      && (spec.name === 'pl7.app/vdj/uniqueCellCount')
-      && (spec.annotations?.['pl7.app/abundance/normalized'] === 'false')
-      , { includeNativeLabel: true, addLabelAsSuffix: true });
+      const hasScClonotypeKey = pColumnSpec.axesSpec?.length >= 2
+        && (pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/scClonotypeKeyRR'
+          || pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/clusterIdRR'
+        );
 
-    // Combine all valid options
-    const validOptions = [...validUmiOptions, ...validCountOptions, ...validScOptions];
-    return validOptions;
+      return !hasScClonotypeKey;
+    });
   })
 
   .output('metadataOptions', (ctx) =>
@@ -117,13 +136,10 @@ export const model = BlockModel.create()
   .output('denominatorOptions', (ctx) => {
     if (!ctx.args.contrastFactor) return undefined;
 
-    const data = ctx.resultPool.getDataByRef(ctx.args.contrastFactor)?.data;
+    const pColumn = ctx.resultPool.getPColumnByRef(ctx.args.contrastFactor);
+    if (!pColumn) return undefined;
 
-    // @TODO need a convenient method in API
-    const values = data?.getDataAsJson<Record<string, string>>()?.['data'];
-    if (!values) return undefined;
-
-    return [...new Set(Object.values(values))];
+    return ctx.createPFrame([pColumn]);
   })
 
   .output('errorLogs', (ctx) => {
@@ -137,17 +153,38 @@ export const model = BlockModel.create()
 
   // Returns a map of results
   .output('pt', (ctx) => {
-    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
     if (pCols === undefined) {
       return undefined;
     }
 
-    // Filter by selected comparison
-    pCols = pCols.filter(
-      (col) => col.spec.axesSpec[0]?.domain?.['pl7.app/differentialAbundance/comparison'] === ctx.uiState.comparison,
-    );
-
     return createPlDataTableV2(ctx, pCols, ctx.uiState?.tableState);
+  })
+
+  .output('sheets', (ctx) => {
+    const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (pCols === undefined || pCols.length === 0) {
+      return undefined;
+    }
+
+    // Get unique contrast values
+    const contrasts = getUniquePartitionKeys(pCols[0].data)?.[0];
+    if (!contrasts) return undefined;
+
+    return [createPlDataTableSheet(ctx, pCols[0].spec.axesSpec[0], contrasts)];
+  })
+
+  .output('test', (ctx) => {
+    const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (pCols === undefined || pCols.length === 0) {
+      return undefined;
+    }
+
+    // Get unique contrast values
+    const contrasts = getUniquePartitionKeys(pCols[0].data)?.[0];
+    if (!contrasts) return undefined;
+
+    return getUniquePartitionKeys(pCols[0].data);
   })
 
   .output('topTablePf', (ctx): PFrameHandle | undefined => {
@@ -156,7 +193,7 @@ export const model = BlockModel.create()
       return undefined;
     }
 
-    pCols = filterPCols(pCols, ctx.uiState.comparison);
+    pCols = filterPCols(pCols);
 
     return createPFrameForGraphs(ctx, pCols);
   })
@@ -166,19 +203,37 @@ export const model = BlockModel.create()
     if (pCols === undefined) {
       return undefined;
     }
-    pCols = filterPCols(pCols, ctx.uiState.comparison);
+    pCols = filterPCols(pCols);
 
     return pCols.map(
       (c) =>
-      ({
-        columnId: c.id,
-        spec: c.spec,
-      } satisfies PColumnIdAndSpec),
+        ({
+          columnId: c.id,
+          spec: c.spec,
+        } satisfies PColumnIdAndSpec),
     );
   })
 
+  .output('msaPf', (ctx) => {
+    const msaCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+    if (!msaCols) return undefined;
+
+    const datasetRef = ctx.args.countsRef;
+    if (datasetRef === undefined)
+      return undefined;
+
+    const seqCols = ctx.resultPool.getAnchoredPColumns(
+      { main: datasetRef },
+      [{ axes: [{ anchor: 'main', idx: 1 }] }],
+    );
+    if (seqCols === undefined)
+      return undefined;
+
+    return createPFrameForGraphs(ctx, [...msaCols, ...seqCols]);
+  })
+
   .sections((_ctx) => ([
-    { type: 'link', href: '/', label: 'Contrast' },
+    { type: 'link', href: '/', label: 'Main' },
     { type: 'link', href: '/graph', label: 'Volcano plot' },
   ]))
 

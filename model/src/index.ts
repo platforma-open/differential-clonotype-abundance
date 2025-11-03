@@ -116,8 +116,8 @@ export const model = BlockModel.create()
       }
 
       const hasScClonotypeKey = pColumnSpec.axesSpec?.length >= 2
-        && (pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/scClonotypeKey'
-          || pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/clusterId'
+        && (pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/scClonotypeKeyRR'
+          || pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/clusterIdRR'
         );
 
       return !hasScClonotypeKey;

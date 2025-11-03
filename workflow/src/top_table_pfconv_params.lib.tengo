@@ -4,10 +4,11 @@ math := import("math")
 getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 	field := undefined
 	degName := undefined
-	if inputType == "gene" {
+	if inputType == "Gene" {
 		field = "rna-seq"
 		countsSpec.axesSpec[1].annotations["pl7.app/graph/axis/highCardinality"] = "false"
-		degName = "DEG"
+		// Should be DEG, but since its just for outputs lets simplify things
+		degName = "log2foldchange"
 	} else {
 		field = "differentialAbundance"
 		degName = "log2foldchange"
@@ -28,7 +29,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/contrastGroup",
 					type: "String",
 					annotations: {
-						"pl7.app/label": "Contrast"
+						"pl7.app/label": inputType + " Contrast"
 					}
 				}
 			},
@@ -47,7 +48,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/basemean",
 					valueType: "Double",
 					annotations: {
-						"pl7.app/label": "Base mean",
+						"pl7.app/label": inputType + " Base mean",
 						"pl7.app/table/orderPriority": "70"
 					}
 				}
@@ -60,7 +61,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/" + degName,
 					valueType: "Double",
 					annotations: {
-						"pl7.app/label": "Log2FC",
+						"pl7.app/label": inputType + " Log2FC",
 						"pl7.app/table/orderPriority": "60",
 						"pl7.app/graph/axis/symmetricRange": "0"
 					}
@@ -74,7 +75,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/lfcse",
 					valueType: "Double",
 					annotations: {
-						"pl7.app/label": "Log2FC SE",
+						"pl7.app/label": inputType + " Log2FC SE",
 						"pl7.app/table/orderPriority": "50"
 					}
 				}
@@ -87,7 +88,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/waldstat",
 					valueType: "Double",
 					annotations: {
-						"pl7.app/label": "Stat",
+						"pl7.app/label": inputType + " Stat",
 						"pl7.app/table/orderPriority": "40"
 					}
 				}
@@ -100,7 +101,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/pvalue",
 					valueType: "Double",
 					annotations: {
-						"pl7.app/label": "P-value",
+						"pl7.app/label": inputType + " P-value",
 						"pl7.app/table/orderPriority": "30"
 					}
 				}
@@ -113,7 +114,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/padj",
 					valueType: "Double",
 					annotations: {
-						"pl7.app/label": "Adjusted p-value",
+						"pl7.app/label": inputType + " Adjusted p-value",
 						"pl7.app/table/orderPriority": "20"
 					}
 				}
@@ -126,7 +127,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/minlog10padj",
 					valueType: "Double",
 					annotations: {
-						"pl7.app/label": "-log10 adjusted p-value",
+						"pl7.app/label": inputType + " -log10 adjusted p-value",
 						"pl7.app/table/orderPriority": "10"
 					}
 				}
@@ -138,7 +139,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/regulationDirection",
 					valueType: "String",
 					annotations: {
-						"pl7.app/label": "Regulation direction",
+						"pl7.app/label": inputType + " Regulation direction",
 						"pl7.app/graph/palette": "{\"name\":\"triadic\",\"mapping\":{\"Up\":\"19\",\"Down\":\"22\",\"NS\":\"25\"}}",
 						"pl7.app/graph/thresholds": thresholds,
 						"pl7.app/table/orderPriority": "5"
@@ -147,7 +148,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 			}
 			]
 
-	if inputType == "gene" {
+	if inputType == "Gene" {
 		columns += [{
 				column: "SYMBOL",
 				id: "genesymbol",

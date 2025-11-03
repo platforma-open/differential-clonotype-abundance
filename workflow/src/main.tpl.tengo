@@ -41,12 +41,14 @@ wf.body(func(args) {
 
 	// Get type of input
 	inputType := undefined
-	if (countsSpec.axesSpec[1].name == "pl7.app/vdj/clonotypeKey") {
-		inputType = "clonotype"
+	if (countsSpec.axesSpec[1].name == "pl7.app/vdj/clonotypeKey" || countsSpec.axesSpec[1].name == "pl7.app/vdj/scClonotypeKey") {
+		inputType = "Clonotype"
 	} else if (countsSpec.axesSpec[1].name == "pl7.app/rna-seq/geneId") {
-		inputType = "gene"
+		inputType = "Gene"
+	} else if (countsSpec.axesSpec[1].name == "pl7.app/vdj/clusterId") {
+		inputType = "Cluster"
 	} else {
-		ll.panic("Not yet supported input data. Please contact Milaboratories to include it:\n%v", countsSpec)
+		ll.panic("\n\nNot yet supported input data. Please contact Milaboratories to include it:\n%v\n", countsSpec)
 	}
 
 	// Set default conversion memory and CPU
@@ -113,7 +115,7 @@ wf.body(func(args) {
 
 	// @TODO: After fixing downstream block usage for axis based contrast remove this condition
 	exports := {}
-	if inputType == "clonotype" {
+	if inputType == "Clonotype" || inputType == "Cluster" {
 		exports = {
 			DEG: degPF_clonotype,
 			regDir: regDirPF_clonotype

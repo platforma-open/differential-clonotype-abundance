@@ -1,6 +1,6 @@
 ll := import("@platforma-sdk/workflow-tengo:ll")
 
-getColumns := func(countsSpec, blockId, species) {
+getColumns := func(countsSpec, blockId, species, inputType) {
 	field := undefined
 	runIdLabel := undefined
 	degName := undefined
@@ -32,7 +32,7 @@ getColumns := func(countsSpec, blockId, species) {
 						"pl7.app/blockId": blockId
 					},
 					annotations: {
-						"pl7.app/label": "Contrast"
+						"pl7.app/label": inputType + " Contrast"
 					}
 				}
 			},
@@ -53,7 +53,7 @@ getColumns := func(countsSpec, blockId, species) {
 					valueType: "Double",
 					domain: {},
 					annotations: {
-						"pl7.app/label": "Log2FC",
+						"pl7.app/label": inputType + " Log2FC",
 						"pl7.app/table/hValue": "true",
 						// This allows us to select this Pcolumn to use it as filtering
 						// in this case to keep only genes appearing in this list
@@ -84,7 +84,7 @@ getColumns := func(countsSpec, blockId, species) {
 					valueType: "String",
 					domain: {},
 					annotations: {
-						"pl7.app/label": "Regulation direction (Up\\Down\\NS)",
+						"pl7.app/label": inputType + " Regulation direction (Up\\Down\\NS)",
 						"pl7.app/table/orderPriority": "5"
 					}
 				}

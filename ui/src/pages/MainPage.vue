@@ -25,32 +25,33 @@ const app = useApp();
 const tableSettings = usePlDataTableSettingsV2({
   model: () => app.model.outputs.pt,
   sheets: () => app.model.outputs.sheets,
-  filtersConfig: ({ column }) => {
-    // Apply default filters based on column names
-    const columnName = column.spec.name;
+  // @TODO: uncomment with new absolute or min & max filter for log2FC
+  // filtersConfig: ({ column }) => {
+  //   // Apply default filters based on column names
+  //   const columnName = column.spec.name;
 
-    // Filter for log2foldchange columns (>= log2FcThreshold)
-    if (columnName.endsWith('/log2foldchange')) {
-      return {
-        default: {
-          type: 'number_greaterThanOrEqualTo',
-          reference: app.model.args.log2FcThreshold,
-        },
-      };
-    }
+  //   // Filter for log2foldchange columns (>= log2FcThreshold)
+  //   if (columnName.endsWith('/log2foldchange')) {
+  //     return {
+  //       default: {
+  //         type: 'number_greaterThanOrEqualTo',
+  //         reference: app.model.args.log2FcThreshold,
+  //       },
+  //     };
+  //   }
 
-    // Filter for padj columns (<= pAdjThreshold)
-    if (columnName.endsWith('/padj')) {
-      return {
-        default: {
-          type: 'number_lessThanOrEqualTo',
-          reference: app.model.args.pAdjThreshold,
-        },
-      };
-    }
+  //   // Filter for padj columns (<= pAdjThreshold)
+  //   if (columnName.endsWith('/padj')) {
+  //     return {
+  //       default: {
+  //         type: 'number_lessThanOrEqualTo',
+  //         reference: app.model.args.pAdjThreshold,
+  //       },
+  //     };
+  //   }
 
-    return {};
-  },
+  //   return {};
+  // },
 });
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);

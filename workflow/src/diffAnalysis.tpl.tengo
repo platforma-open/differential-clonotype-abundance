@@ -73,11 +73,11 @@ self.body(func(inputs) {
 	degImportParams := undefined
 	species := undefined
 	field := undefined
-	if inputType == "gene" {
+	if inputType == "Gene" {
 		species = countsSpec.axesSpec[1].domain["pl7.app/species"]
 		software = assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:gene-deseq")
 		field = "rna-seq"
-	} else if inputType == "clonotype" {
+	} else {
 		software = assets.importSoftware("@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software:clonotype-deseq")
 		field = "differentialAbundance"
 	}
@@ -132,11 +132,11 @@ self.body(func(inputs) {
 					arg("--IDs_column").arg(countsSpec.axesSpec[1].annotations["pl7.app/label"])
 
 			// Gene specific arguments
-			if inputType == "gene" {
+			if inputType == "Gene" {
 				diffExec.arg("-s").arg(species)
 
 			// Clonotype specific arguments
-			} else if inputType == "clonotype" {
+			} else {
 				// @TODO: improve filter, right now is min_counts in at least one sample
 				// fraction_for_filter value is set to at least 1 in R code
 				diffExec.arg("--fraction_for_filter").arg("0.01").
@@ -158,11 +158,11 @@ self.body(func(inputs) {
 			// @TODO: Update downstream blocks like clonotype-browser and antibody-tcr-leads
 			// and clonotype enrichment to work with axis stored contrast
 			// Temporal fix to export clonotype data in old way
-			if inputType == "clonotype" {
-				comparison := numerator + " - vs - " + denominator
+			if inputType == "Clonotype" || inputType == "Cluster" {
+				comparison := inputType + " " + numerator + " - vs - " + denominator
 
 				// Add DEG export with specific import params. Adding new csv output to script with only DEGs and logFC
-				degImportParams := dcaPfconvParamsLib.getColumns(countsSpec)
+				degImportParams := dcaPfconvParamsLib.getColumns(countsSpec, inputType)
 				DegPf := xsv.importFile(diffExec.getFile("DEG.csv"), "csv", degImportParams, {mem: defaultConvMem, cpu: defaultConvCpu})
 
 
@@ -240,7 +240,7 @@ self.body(func(inputs) {
 															{splitDataAndSpec: true, mem: defaultConvMem, cpu: defaultConvCpu})
 
 		// Add DEG export with specific import params. Adding new csv output to script with only DEGs and logFC
-		degImportParams = generalDaPfconvLib.getColumns(countsSpec, blockId, species)
+		degImportParams = generalDaPfconvLib.getColumns(countsSpec, blockId, species, inputType)
 		DegPf := xsv.importFile(ptablerResult.getFile("concatenated_output_Deg.csv"), "csv", degImportParams, {mem: defaultConvMem, cpu: defaultConvCpu})
 
 		// Create contrast label Pcolumn

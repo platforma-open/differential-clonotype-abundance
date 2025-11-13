@@ -3,7 +3,8 @@ import type { PredefinedGraphOption } from '@milaboratories/graph-maker';
 import { GraphMaker } from '@milaboratories/graph-maker';
 import '@milaboratories/graph-maker/styles';
 import type { PColumnIdAndSpec, PlSelectionModel } from '@platforma-sdk/model';
-import { PlBtnGhost, PlMultiSequenceAlignment, PlSlideModal } from '@platforma-sdk/ui-vue';
+import { PlBtnGhost, PlSlideModal } from '@platforma-sdk/ui-vue';
+import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
 import { computed, ref } from 'vue';
 import { useApp } from '../app';
 import {

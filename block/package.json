@@ -25,7 +25,6 @@
       "title": "Differential Abundance",
       "logo": "file:../logos/block-logo.png",
       "url": "https://github.com/platforma-open/differential-clonotype-abundance",
-      "docs": "https://github.com/platforma-open/differential-clonotype-abundance/docs",
       "support": "mailto:support@milaboratories.com",
       "description": "Identify differentially abundant features between conditions.",
       "longDescription": "file:../docs/description.md",

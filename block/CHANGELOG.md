@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.4.1
+
+### Patch Changes
+
+- 87774c2: Block metadata updated
+
 ## 1.4.0
 
 ### Minor Changes

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { createPlDataTableStateV2, PFrameImpl } from '@platforma-sdk/model';
+import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
+import type { PlRef, PlSelectionModel } from '@platforma-sdk/model';
+import { createPlDataTableStateV2, PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
 import {
   PlAccordionSection,
   PlAgDataTableV2,
@@ -19,8 +21,19 @@ import {
 import { computed, ref, watch } from 'vue';
 import { useApp } from '../app';
 import ErrorBoundary from '../components/ErrorBoundary.vue';
+import {
+  isSequenceColumn,
+} from '../util';
 
 const app = useApp();
+
+const multipleSequenceAlignmentOpen = ref(false);
+
+// With selection we will get the axis of cluster id
+const selection = ref<PlSelectionModel>({
+  axesSpec: [],
+  selectedKeys: [],
+});
 
 const tableSettings = usePlDataTableSettingsV2({
   model: () => app.model.outputs.pt,
@@ -54,10 +67,34 @@ const tableSettings = usePlDataTableSettingsV2({
   // },
 });
 
+// Update page title by dataset
+function setInput(inputRef?: PlRef) {
+  app.model.args.countsRef = inputRef;
+  if (inputRef) {
+    const mainLabel = app.model.outputs.countsOptions?.find((o) => plRefsEqual(o.ref, inputRef))?.label;
+    if (mainLabel)
+      app.model.ui.title = 'Differential abundance - ' + mainLabel;
+  }
+}
+
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
 const showSettings = () => {
   settingsAreShown.value = true;
 };
+
+const dataType = computed<'rna-seq' | 'differentialAbundance' | undefined>(() => {
+  const pcols = app.model.outputs.topTablePcols;
+  if (!pcols) {
+    return undefined;
+  }
+  if (pcols.some((p) => p.spec.name === 'pl7.app/rna-seq/log2foldchange')) {
+    return 'rna-seq';
+  }
+  if (pcols.some((p) => p.spec.name === 'pl7.app/differentialAbundance/log2foldchange')) {
+    return 'differentialAbundance';
+  }
+  return undefined;
+});
 
 const covariateOptions = computed(() => {
   return app.model.outputs.metadataOptions?.map((v) => ({
@@ -145,6 +182,13 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
           <PlMaskIcon24 name="settings" />
         </template>
       </PlBtnGhost>
+      <PlBtnGhost
+        v-if="dataType === 'differentialAbundance'"
+        icon="dna"
+        @click.stop="() => (multipleSequenceAlignmentOpen = true)"
+      >
+        Multiple Sequence Alignment
+      </PlBtnGhost>
     </template>
     <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>
       {{ errorLogs.value }}
@@ -152,6 +196,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
     <ErrorBoundary>
       <PlAgDataTableV2
         v-model="app.model.ui.tableState"
+        v-model:selection="selection"
         :settings="tableSettings"
         not-ready-text="Data is not computed"
         show-columns-panel
@@ -163,7 +208,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
       <template #title>Settings</template>
       <PlDropdownRef
         v-model="app.model.args.countsRef" :options="app.model.outputs.countsOptions"
-        label="Select dataset"
+        label="Select dataset" @update:model-value="setInput"
       />
       <PlDropdownMulti v-model="app.model.args.covariateRefs" :options="covariateOptions" label="Design" />
       <PlDropdown v-model="app.model.args.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
@@ -201,4 +246,19 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
       </PlAccordionSection>
     </PlSlideModal>
   </PlBlockPage>
+  <!-- Slide window with MSA -->
+  <PlSlideModal
+    v-model="multipleSequenceAlignmentOpen"
+    width="100%"
+    :close-on-outside-click="false"
+  >
+    <template #title>Multiple Sequence Alignment</template>
+    <PlMultiSequenceAlignment
+      v-if="dataType === 'differentialAbundance'"
+      v-model="app.model.ui.alignmentModel"
+      :sequence-column-predicate="isSequenceColumn"
+      :p-frame="app.model.outputs.msaPf"
+      :selection="selection"
+    />
+  </PlSlideModal>
 </template>

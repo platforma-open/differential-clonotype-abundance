@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@platforma-open/milaboratories.differential-clonotype-abundance.model": "workspace:*",
+    "@milaboratories/multi-sequence-alignment": "catalog:",
     "@milaboratories/graph-maker": "catalog:",
     "@platforma-sdk/ui-vue": "catalog:",
     "@platforma-sdk/model": "catalog:",

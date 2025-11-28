@@ -16,8 +16,8 @@ catalogs:
       specifier: ^2.2.9
       version: 2.2.9
     '@platforma-open/milaboratories.runenv-python-3':
-      specifier: ^1.4.9
-      version: 1.4.13
+      specifier: ^1.7.5
+      version: 1.7.5
     '@platforma-open/milaboratories.runenv-r-differential-expression':
       specifier: ^1.0.7
       version: 1.0.7
@@ -135,7 +135,7 @@ importers:
     devDependencies:
       '@platforma-open/milaboratories.runenv-python-3':
         specifier: 'catalog:'
-        version: 1.4.13
+        version: 1.7.5
       '@platforma-open/milaboratories.runenv-r-differential-expression':
         specifier: 'catalog:'
         version: 1.0.7
@@ -1069,20 +1069,23 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@platforma-open/milaboratories.runenv-python-3.10.11@1.1.13':
-    resolution: {integrity: sha512-IWiWrnfCBDe3NTaEneTFZp0w1NgHKQH5gtH6fS0N5H1UUQQYWWeQnfSXXUUvS/Zk4uJUPok6X5FulQO6AQjO1g==}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-atls@1.2.3':
+    resolution: {integrity: sha512-gSdJ85n4VN+XEeZ2Vsyhv3iLWrN9mU/gfuXAtjnAGuXe62UPw6W4R0EAQ1bhJi18UBpMr69jY/0OFPXippUBXQ==}
 
-  '@platforma-open/milaboratories.runenv-python-3.12.10-atls@1.1.13':
-    resolution: {integrity: sha512-ONoKe3wXX8zl6qEg19R0P6MIRoXOZvIhISAzKwjwO20xtWw5XjZdPeORnKjxP4QTOYs7DMoygfWvkDxd4UiVdA==}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-h5ad@1.1.3':
+    resolution: {integrity: sha512-RrCHJPVKRDD90UtiRKG+JRxWuBQGTM0twzIJVR4X7TedSJR8dnwrPL0uJKs7+f6Nw4B4PlZ+8vjivlyHSEIgZQ==}
 
-  '@platforma-open/milaboratories.runenv-python-3.12.10-sccoda@1.2.13':
-    resolution: {integrity: sha512-ihOmeabM9pl/t2hZ5fRFfIL37F9XdT9+2MLIIcX8I40BR5pTbz4DKSJ3AbqpnG1Oi1nQTKJXgFbWOuoXfaZ5AQ==}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-rapids@1.4.3':
+    resolution: {integrity: sha512-W4tMkHdnasHkocLyUVtgQD6rR9haV40RjYkcW6GBqUkwZBrZj8kqI3bvNhaQT5Za3GXgxNYLtIHpggUa3KLy5w==}
 
-  '@platforma-open/milaboratories.runenv-python-3.12.10@1.2.11':
-    resolution: {integrity: sha512-PpuA67wPqA9Rzm71a1zAG8n5c8GCRfMDRBU6nj4jRWwR+xBwYDBxiaSlIOJHmz9gxOXldc/v+Hhzkmt7oItu9g==}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-sccoda@1.3.4':
+    resolution: {integrity: sha512-3U614BaP2Z7kKgjKWrcV8/67QvW93wQ2BzVaxE+nY+C9KhO53y1YQuDfBQue92oxBDjsrSuBOu+pfDS248YGyg==}
 
-  '@platforma-open/milaboratories.runenv-python-3@1.4.13':
-    resolution: {integrity: sha512-a/qjSSqCtdNHNEJn76gJmqZ4oGaYib8dNvexvF/evDcAQWh8TVzRfH71+VhTo4cXtr6L7ldcx/K8v0Cwvn7HPQ==}
+  '@platforma-open/milaboratories.runenv-python-3.12.10@1.3.4':
+    resolution: {integrity: sha512-7+JQL3k4qrHk3Bpx/4FIORuUufnuBQqIZcu/CNKeAITNBjIN51En18mcseWgdmDbPpEmwlS0+hhk5ob8ov/a1g==}
+
+  '@platforma-open/milaboratories.runenv-python-3@1.7.5':
+    resolution: {integrity: sha512-jGexrFZQ9IMa0P416WnQiTmshhjQo8uFfTiYvb5H1/bZfkN34FNI7G37/QT5W+ocFiLQ3Eu2Ok4BLeG9EwzlYg==}
 
   '@platforma-open/milaboratories.runenv-r-differential-expression@1.0.7':
     resolution: {integrity: sha512-ljag97md1Aj9a2JJfxjCd+s+DqnpmdGL7aNWFCuiwbK45fAJTJaE9HACEjAincZZOFSeQjkxDRNhPjqJzRSAfQ==}
@@ -6915,20 +6918,23 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@platforma-open/milaboratories.runenv-python-3.10.11@1.1.13': {}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-atls@1.2.3': {}
 
-  '@platforma-open/milaboratories.runenv-python-3.12.10-atls@1.1.13': {}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-h5ad@1.1.3': {}
 
-  '@platforma-open/milaboratories.runenv-python-3.12.10-sccoda@1.2.13': {}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-rapids@1.4.3': {}
 
-  '@platforma-open/milaboratories.runenv-python-3.12.10@1.2.11': {}
+  '@platforma-open/milaboratories.runenv-python-3.12.10-sccoda@1.3.4': {}
 
-  '@platforma-open/milaboratories.runenv-python-3@1.4.13':
+  '@platforma-open/milaboratories.runenv-python-3.12.10@1.3.4': {}
+
+  '@platforma-open/milaboratories.runenv-python-3@1.7.5':
     dependencies:
-      '@platforma-open/milaboratories.runenv-python-3.10.11': 1.1.13
-      '@platforma-open/milaboratories.runenv-python-3.12.10': 1.2.11
-      '@platforma-open/milaboratories.runenv-python-3.12.10-atls': 1.1.13
-      '@platforma-open/milaboratories.runenv-python-3.12.10-sccoda': 1.2.13
+      '@platforma-open/milaboratories.runenv-python-3.12.10': 1.3.4
+      '@platforma-open/milaboratories.runenv-python-3.12.10-atls': 1.2.3
+      '@platforma-open/milaboratories.runenv-python-3.12.10-h5ad': 1.1.3
+      '@platforma-open/milaboratories.runenv-python-3.12.10-rapids': 1.4.3
+      '@platforma-open/milaboratories.runenv-python-3.12.10-sccoda': 1.3.4
 
   '@platforma-open/milaboratories.runenv-r-differential-expression@1.0.7': {}
 

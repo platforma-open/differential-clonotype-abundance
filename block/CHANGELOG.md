@@ -1,5 +1,14 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.4.2
+
+### Patch Changes
+
+- Updated dependencies [1e65d5c]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.workflow@2.6.1
+  - @platforma-open/milaboratories.differential-clonotype-abundance.model@2.6.1
+  - @platforma-open/milaboratories.differential-clonotype-abundance.ui@1.10.1
+
 ## 1.4.1
 
 ### Patch Changes

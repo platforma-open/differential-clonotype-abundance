@@ -32,7 +32,7 @@ getColumns := func(countsSpec, blockId, species, inputType) {
 						"pl7.app/blockId": blockId
 					},
 					annotations: {
-						"pl7.app/label": inputType + " Contrast"
+						"pl7.app/label": "Contrast"
 					}
 				}
 			},

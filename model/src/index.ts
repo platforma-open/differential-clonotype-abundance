@@ -22,6 +22,7 @@ import {
 export type UiState = {
   tableState: PlDataTableStateV2;
   graphState: GraphMakerState;
+  title?: string;
   selectedChain?: string;
   alignmentModel: PlMultiSequenceAlignmentModel;
 };
@@ -231,6 +232,8 @@ export const model = BlockModel.create()
 
     return createPFrameForGraphs(ctx, [...msaCols, ...seqCols]);
   })
+
+  .title((ctx) => ctx.uiState?.title ?? 'Differential abundance')
 
   .sections((_ctx) => ([
     { type: 'link', href: '/', label: 'Main' },

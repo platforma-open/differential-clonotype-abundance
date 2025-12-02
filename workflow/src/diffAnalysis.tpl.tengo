@@ -212,8 +212,9 @@ self.body(func(inputs) {
 							"pl7.app/label": comparison + " (UP\\Down-regulated clonotype list)",
 							"pl7.app/isAbundance": "true",
 							"pl7.app/table/visibility": "optional",
-							"pl7.app/table/orderPriority": "84000"
-
+							"pl7.app/table/orderPriority": "84000",
+							"pl7.app/discreteValues": "[\"Up\",\"Down\",\"NS\"]",
+         	 				"pl7.app/isDiscreteFilter": "true"
 						},
 						axesSpec: [
 							countsSpec.axesSpec[1]

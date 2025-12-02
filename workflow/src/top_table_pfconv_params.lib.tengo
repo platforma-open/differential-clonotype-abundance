@@ -29,7 +29,7 @@ getColumns := func(countsSpec, inputType, log2FCThreshold, pAdjFCThreshold) {
 					name: "pl7.app/" + field + "/contrastGroup",
 					type: "String",
 					annotations: {
-						"pl7.app/label": inputType + " Contrast"
+						"pl7.app/label": "Contrast"
 					}
 				}
 			},

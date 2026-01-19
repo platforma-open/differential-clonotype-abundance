@@ -18,7 +18,7 @@ import {
   usePlDataTableSettingsV2,
   useWatchFetch,
 } from '@platforma-sdk/ui-vue';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, watchEffect } from 'vue';
 import { useApp } from '../app';
 import ErrorBoundary from '../components/ErrorBoundary.vue';
 import {
@@ -26,6 +26,19 @@ import {
 } from '../util';
 
 const app = useApp();
+
+// updating defaultBlockLabel
+watchEffect(() => {
+  // Derive label from contrast + comparison (numerators vs denominator) + thresholds
+  if (app.model.args.denominator && app.model.args.numerators.length > 0) {
+    const numeratorsPart = app.model.args.numerators.join(', ');
+    const log2FC = app.model.args.log2FcThreshold;
+    const pAdj = app.model.args.pAdjThreshold;
+    app.model.args.defaultBlockLabel = `${numeratorsPart} vs ${app.model.args.denominator} (log2FC: ${log2FC}, pAdj: ${pAdj})`;
+  } else {
+    app.model.args.defaultBlockLabel = 'Configure comparison';
+  }
+});
 
 const multipleSequenceAlignmentOpen = ref(false);
 
@@ -173,8 +186,11 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
 </script>
 
 <template>
-  <PlBlockPage>
-    <template #title>Differential Abundance</template>
+  <PlBlockPage
+    v-model:subtitle="app.model.args.customBlockLabel"
+    :subtitle-placeholder="app.model.args.defaultBlockLabel"
+    title="Differential Abundance"
+  >
     <template #append>
       <PlBtnGhost @click.stop="showSettings">
         Settings

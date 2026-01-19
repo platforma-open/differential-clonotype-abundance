@@ -27,6 +27,8 @@ export type UiState = {
 };
 
 export type BlockArgs = {
+  defaultBlockLabel: string;
+  customBlockLabel: string;
   countsRef?: PlRef;
   covariateRefs: PlRef[];
   contrastFactor?: PlRef;
@@ -58,6 +60,8 @@ function filterPCols(
 export const model = BlockModel.create()
 
   .withArgs<BlockArgs>({
+    defaultBlockLabel: 'Configure comparison',
+    customBlockLabel: '',
     // IGChain: [],
     numerators: [],
     covariateRefs: [],
@@ -232,7 +236,9 @@ export const model = BlockModel.create()
     return createPFrameForGraphs(ctx, [...msaCols, ...seqCols]);
   })
 
-  .title((ctx) => ctx.uiState?.title ?? 'Differential abundance')
+  .title(() => 'Differential abundance')
+
+  .subtitle((ctx) => ctx.args.customBlockLabel || ctx.args.defaultBlockLabel || '')
 
   .sections((_ctx) => ([
     { type: 'link', href: '/', label: 'Main' },

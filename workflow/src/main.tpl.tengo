@@ -101,7 +101,9 @@ wf.body(func(args) {
 			inputType: inputType
 		},
 		metaInputs: {
-			blockId: blockId
+			blockId: blockId,
+			customBlockLabel: args.customBlockLabel,
+			defaultBlockLabel: args.defaultBlockLabel
 		}
 	})
 

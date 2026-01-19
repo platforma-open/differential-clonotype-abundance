@@ -3,7 +3,6 @@ import type {
   InferOutputsType,
   PColumn,
   PColumnIdAndSpec,
-  PFrameHandle,
   PlDataTableStateV2,
   PlMultiSequenceAlignmentModel,
   PlRef,
@@ -153,7 +152,7 @@ export const model = BlockModel.create()
   })
 
   // Returns a map of results
-  .output('pt', (ctx) => {
+  .outputWithStatus('pt', (ctx) => {
     const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
     if (pCols === undefined) {
       return undefined;
@@ -188,7 +187,7 @@ export const model = BlockModel.create()
     return getUniquePartitionKeys(pCols[0].data);
   })
 
-  .output('topTablePf', (ctx): PFrameHandle | undefined => {
+  .outputWithStatus('topTablePf', (ctx) => {
     let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
     if (pCols === undefined) {
       return undefined;

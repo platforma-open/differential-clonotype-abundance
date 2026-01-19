@@ -36,7 +36,7 @@ const selection = ref<PlSelectionModel>({
 });
 
 const tableSettings = usePlDataTableSettingsV2({
-  model: () => app.model.outputs.pt,
+  model: () => app.model.outputs.pt ?? undefined,
   sheets: () => app.model.outputs.sheets,
   // @TODO: uncomment with new absolute or min & max filter for log2FC
   // filtersConfig: ({ column }) => {

@@ -47,7 +47,9 @@ self.validateInputs({
 	},
 	metaInputs: {
 		"__options__,closed": "",
-		"blockId,omitempty": "string"
+		"blockId,omitempty": "string",
+		"customBlockLabel,omitempty": "string",
+		"defaultBlockLabel,omitempty": "string"
 	}
 })
 
@@ -102,9 +104,11 @@ self.body(func(inputs) {
 		degPframeBuilder_clonotype := pframes.pFrameBuilder()
 		regDirPframeBuilder_clonotype := pframes.pFrameBuilder()
 
+		traceLabel := inputs.metaInputs.customBlockLabel || inputs.metaInputs.defaultBlockLabel
+
 		trace := pSpec.makeTrace(countsSpec,
 			{type: "milaboratories.differential-analysis", importance: 30, 
-			label: "DA - Denominator: " + denominator + " (log2FC: " + log2FcThreshold + ", pAdj: " + pAdjThreshold + ")"}
+			label: traceLabel}
 		)
 
 		// convert PColumns to csv

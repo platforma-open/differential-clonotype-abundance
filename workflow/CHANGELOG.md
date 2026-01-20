@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.7.0
+
+### Minor Changes
+
+- abf9b94: Support custom block title and running status
+
 ## 2.6.1
 
 ### Patch Changes

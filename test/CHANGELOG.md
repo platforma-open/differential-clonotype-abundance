@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.test
 
+## 1.3.0
+
+### Minor Changes
+
+- abf9b94: Support custom block title and running status
+
 ## 1.2.2
 
 ### Patch Changes

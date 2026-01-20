@@ -1,6 +1,6 @@
 {
   "name": "@platforma-open/milaboratories.differential-clonotype-abundance",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "scripts": {
     "build": "rm -rf block-pack/* && block-tools pack",
     "do-pack": "rm -f *.tgz && pnpm pack && mv *.tgz package.tgz",

@@ -1,5 +1,16 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.11.0
+
+### Minor Changes
+
+- abf9b94: Support custom block title and running status
+
+### Patch Changes
+
+- Updated dependencies [abf9b94]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.model@2.7.0
+
 ## 1.10.1
 
 ### Patch Changes

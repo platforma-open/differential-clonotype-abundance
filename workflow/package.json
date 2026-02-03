@@ -11,8 +11,7 @@
   "dependencies": {
     "@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software": "workspace:*",
     "@platforma-sdk/workflow-tengo": "catalog:",
-    "@milaboratories/software-pframes-conv": "catalog:",
-    "@platforma-open/milaboratories.software-small-binaries": "catalog:"
+    "@milaboratories/software-pframes-conv": "catalog:"
   },
   "devDependencies": {
     "@platforma-sdk/tengo-builder": "catalog:"

@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.5.3
+
+### Patch Changes
+
+- 330b661: Bump package-builder to 3.11.4
+
 ## 1.5.2
 
 ### Patch Changes

@@ -25,7 +25,7 @@ catalog:
 
   # Block-specific dependencies with exact versions
   '@platforma-open/milaboratories.runenv-python-3': 1.4.9
-  '@platforma-open/milaboratories.software-small-binaries': 2.0.1
+  '@platforma-open/milaboratories.software-small-binaries': 2.0.2
   '@platforma-open/milaboratories.runenv-r-differential-expression': 1.0.7
   '@platforma-open/milaboratories.runenv-r': 1.2.18
   

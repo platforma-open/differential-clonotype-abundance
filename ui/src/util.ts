@@ -1,5 +1,5 @@
 import type { PColumnIdAndSpec, PColumnSpec } from '@platforma-sdk/model';
-import { type PlTableFilter, type PTableColumnSpec } from '@platforma-sdk/model';
+import { type PTableColumnSpec } from '@platforma-sdk/model';
 
 export const isSequenceColumn = (column: PColumnIdAndSpec) => {
   if (!(column.spec.annotations?.['pl7.app/vdj/isAssemblingFeature'] === 'true'))
@@ -16,7 +16,7 @@ export const isSequenceColumn = (column: PColumnIdAndSpec) => {
   return isBulkSequence(column.spec) || isSingleCellSequence(column.spec);
 };
 
-export function defaultFilters(tSpec: PTableColumnSpec): (PlTableFilter | undefined) {
+export function defaultFilters(tSpec: PTableColumnSpec): (unknown | undefined) { // TODO: update type with defaultFilters feature restoring or remove
   // console.log(`defaultFilters spec ${JSON.stringify(tSpec, null, 2)}`);
   if (tSpec.type !== 'column') {
     return undefined;

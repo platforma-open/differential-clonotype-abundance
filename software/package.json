@@ -32,6 +32,7 @@
             "dockerfile": "Dockerfile"
           },
           "cmd": [
+            "Rscript",
             "/app/clonotype_deseq2.R"
           ]
         }
@@ -56,6 +57,7 @@
             "dockerfile": "Dockerfile"
           },
           "cmd": [
+            "Rscript",
             "/app/gene_deseq2.R"
           ]
         }

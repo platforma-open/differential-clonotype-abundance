@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.15.1
+
+### Patch Changes
+
+- 5b12de6: Fix R script execution issues
+
 ## 1.15.0
 
 ### Minor Changes

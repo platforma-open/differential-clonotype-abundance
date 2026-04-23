@@ -156,7 +156,7 @@ export const model = BlockModel.create()
   })
 
   // Returns a map of results
-  .outputWithStatus('pt', (ctx) => {
+  .retentiveOutputWithStatus('pt', (ctx) => {
     const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
     if (pCols === undefined) {
       return undefined;
@@ -191,7 +191,7 @@ export const model = BlockModel.create()
     return getUniquePartitionKeys(pCols[0].data);
   })
 
-  .outputWithStatus('topTablePf', (ctx) => {
+  .retentiveOutputWithStatus('topTablePf', (ctx) => {
     let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
     if (pCols === undefined) {
       return undefined;

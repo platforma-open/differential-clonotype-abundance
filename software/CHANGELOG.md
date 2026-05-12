@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.16.0
+
+### Minor Changes
+
+- 06295e6: renv.lock was copied from the binary installation version; Dockerfile was fixed to override default R library
+
 ## 1.15.1
 
 ### Patch Changes

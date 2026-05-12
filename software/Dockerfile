@@ -63,14 +63,3 @@ RUN mkdir -p "${R_LIBS_USER}"
 RUN R --no-echo -e "tryCatch(renv::restore(), error = function(e) message('parallel pass finished with errors: ', conditionMessage(e))); options(Ncpus = 1); renv::restore(clean = TRUE)" \
     && find /root/.cache/R -name keys.html -delete \
     && find /usr/local/lib/R -name keys.html -delete
-
-# Runtime entrypoint: dispatch the command verbatim. The previous wrapper invoked
-# `renv::restore()` here, which on non-root hosts tried to back up entries in
-# /usr/local/lib/R/site-library/ (e.g. rlang from the r-base base image) and
-# failed with Permission denied — see MILAB-6263. The project library set via
-# R_LIBS_USER above is on .libPaths() automatically; no runtime restore is needed.
-RUN printf '#!/bin/bash\nexec "$@"\n' > /app/run.sh \
-    && chmod +x /app/run.sh
-
-# Default command runs Rscript
-ENTRYPOINT ["/app/run.sh"]

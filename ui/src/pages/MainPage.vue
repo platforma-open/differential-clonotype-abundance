@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
 import type { PlSelectionModel } from '@platforma-sdk/model';
-import { createPlDataTableStateV2, PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
+import { PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
 import {
   PlAccordionSection,
   PlAgDataTableV2,

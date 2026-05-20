@@ -164,10 +164,16 @@ watch(() => numeratorOptions.value, (options) => {
   }
 });
 
-// Reset table state when thresholds change to re-apply default filters
-watch(() => [app.model.outputs.pt], () => {
-  app.model.data.tableState = createPlDataTableStateV2();
-});
+// @TODO: re-enable together with the `filtersConfig` block above. The reset
+// only makes sense when changing thresholds also changes the default filters
+// applied to the table; with `filtersConfig` commented out it has no net
+// benefit and only wipes the user's sort / column widths.
+// watch(
+//   () => [app.model.data.log2FcThreshold, app.model.data.pAdjThreshold],
+//   () => {
+//     app.model.data.tableState = createPlDataTableStateV2();
+//   },
+// );
 
 // Get error logs
 const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframeHandle) => {

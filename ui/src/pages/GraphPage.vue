@@ -6,9 +6,7 @@ import type { PColumnIdAndSpec, PlSelectionModel } from '@platforma-sdk/model';
 import { PlBtnGhost, PlSlideModal } from '@platforma-sdk/ui-vue';
 import { computed, ref } from 'vue';
 import { useApp } from '../app';
-import {
-  isSequenceColumn,
-} from '../util';
+import { isSequenceColumn } from '../util';
 
 const app = useApp();
 
@@ -92,7 +90,6 @@ const selection = ref<PlSelectionModel>({
   <GraphMaker
     v-model="app.model.data.graphState"
     v-model:selection="selection"
-    :data-state-key="app.model.data.countsRef"
     chartType="scatterplot-umap"
     :p-frame="app.model.outputs.topTablePf"
     :default-options="defaults"

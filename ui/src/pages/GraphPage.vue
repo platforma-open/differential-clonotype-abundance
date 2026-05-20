@@ -90,9 +90,9 @@ const selection = ref<PlSelectionModel>({
 
 <template>
   <GraphMaker
-    v-model="app.model.ui.graphState"
+    v-model="app.model.data.graphState"
     v-model:selection="selection"
-    :data-state-key="app.model.args.countsRef"
+    :data-state-key="app.model.data.countsRef"
     chartType="scatterplot-umap"
     :p-frame="app.model.outputs.topTablePf"
     :default-options="defaults"
@@ -114,7 +114,7 @@ const selection = ref<PlSelectionModel>({
   >
     <template #title>Multiple Sequence Alignment</template>
     <PlMultiSequenceAlignment
-      v-model="app.model.ui.alignmentModel"
+      v-model="app.model.data.alignmentModel"
       :sequence-column-predicate="isSequenceColumn"
       :p-frame="app.model.outputs.msaPf"
       :selection="selection"

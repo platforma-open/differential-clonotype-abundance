@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
-import type { PlRef, PlSelectionModel } from '@platforma-sdk/model';
-import { createPlDataTableStateV2, PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
+import type { PlSelectionModel } from '@platforma-sdk/model';
+import { PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
 import {
   PlAccordionSection,
   PlAgDataTableV2,
@@ -18,7 +18,8 @@ import {
   usePlDataTableSettingsV2,
   useWatchFetch,
 } from '@platforma-sdk/ui-vue';
-import { computed, ref, watch, watchEffect } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { deriveDefaultLabel } from '@platforma-open/milaboratories.differential-clonotype-abundance.model';
 import { useApp } from '../app';
 import ErrorBoundary from '../components/ErrorBoundary.vue';
 import {
@@ -26,19 +27,6 @@ import {
 } from '../util';
 
 const app = useApp();
-
-// updating defaultBlockLabel
-watchEffect(() => {
-  // Derive label from contrast + comparison (numerators vs denominator) + thresholds
-  if (app.model.args.denominator && app.model.args.numerators.length > 0) {
-    const numeratorsPart = app.model.args.numerators.join(', ');
-    const log2FC = app.model.args.log2FcThreshold;
-    const pAdj = app.model.args.pAdjThreshold;
-    app.model.args.defaultBlockLabel = `${numeratorsPart} vs ${app.model.args.denominator} (log2FC: ${log2FC}, pAdj: ${pAdj})`;
-  } else {
-    app.model.args.defaultBlockLabel = 'Configure comparison';
-  }
-});
 
 const multipleSequenceAlignmentOpen = ref(false);
 
@@ -61,7 +49,7 @@ const tableSettings = usePlDataTableSettingsV2({
   //     return {
   //       default: {
   //         type: 'number_greaterThanOrEqualTo',
-  //         reference: app.model.args.log2FcThreshold,
+  //         reference: app.model.data.log2FcThreshold,
   //       },
   //     };
   //   }
@@ -71,7 +59,7 @@ const tableSettings = usePlDataTableSettingsV2({
   //     return {
   //       default: {
   //         type: 'number_lessThanOrEqualTo',
-  //         reference: app.model.args.pAdjThreshold,
+  //         reference: app.model.data.pAdjThreshold,
   //       },
   //     };
   //   }
@@ -79,16 +67,6 @@ const tableSettings = usePlDataTableSettingsV2({
   //   return {};
   // },
 });
-
-// Update page title by dataset
-function setInput(inputRef?: PlRef) {
-  app.model.args.countsRef = inputRef;
-  if (inputRef) {
-    const mainLabel = app.model.outputs.countsOptions?.find((o) => plRefsEqual(o.ref, inputRef))?.label;
-    if (mainLabel)
-      app.model.ui.title = 'Differential abundance - ' + mainLabel;
-  }
-}
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
 const showSettings = () => {
@@ -117,7 +95,7 @@ const covariateOptions = computed(() => {
 });
 
 const contrastFactorOptions = computed(() => {
-  return app.model.args.covariateRefs.map((ref) => ({
+  return app.model.data.covariateRefs.map((ref) => ({
     value: ref,
     label: covariateOptions.value.find((m) => m.value.name === ref.name)?.label ?? '',
   }));
@@ -146,19 +124,56 @@ const numeratorOptions = useWatchFetch(() => app.model.outputs.denominatorOption
 // Only options not selected as numerators[] are accepted as denominator
 const denominatorOptions = computed(() => {
   return numeratorOptions.value?.filter((op) =>
-    !app.model.args.numerators.includes(op.value));
+    !app.model.data.numerators.includes(op.value));
 });
 
-// Make sure numerator and denominator are reset when contrast factor is changed
-watch(() => [app.model.args.contrastFactor], (_) => {
-  app.model.args.numerators = [];
-  app.model.args.denominator = undefined;
+// Reset numerator + denominator when the user changes the contrast factor.
+// Skip the initial `undefined -> value` transition that fires when
+// `upgradeLegacy` hydrates persisted state, otherwise the watcher would wipe
+// the legacy numerators/denominator right after they were restored.
+watch(() => app.model.data.contrastFactor, (_newRef, oldRef) => {
+  if (oldRef === undefined) return;
+  app.model.data.numerators = [];
+  app.model.data.denominator = undefined;
 });
 
-// Reset table state when thresholds change to re-apply default filters
-watch(() => [app.model.outputs.pt], () => {
-  app.model.ui.tableState = createPlDataTableStateV2();
+// If the user removes the covariate that was selected as contrast factor,
+// the current selection is no longer a valid option — clear it. The watcher
+// above then clears numerators/denominator as a side-effect.
+watch(contrastFactorOptions, (options) => {
+  const current = app.model.data.contrastFactor;
+  if (current === undefined) return;
+  if (!options.some((o) => plRefsEqual(o.value, current))) {
+    app.model.data.contrastFactor = undefined;
+  }
 });
+
+// Backstop: drop any numerator/denominator values that aren't in the current
+// options list. Defends against race conditions when the user changes the
+// contrast factor and picks new values before the async option fetch settles —
+// stale entries from the previous contrast factor get pruned here.
+watch(() => numeratorOptions.value, (options) => {
+  if (options === undefined) return; // not yet loaded
+  const valid = new Set(options.map((o) => o.value));
+  const pruned = app.model.data.numerators.filter((n) => valid.has(n));
+  if (pruned.length !== app.model.data.numerators.length) {
+    app.model.data.numerators = pruned;
+  }
+  if (app.model.data.denominator !== undefined && !valid.has(app.model.data.denominator)) {
+    app.model.data.denominator = undefined;
+  }
+});
+
+// @TODO: re-enable together with the `filtersConfig` block above. The reset
+// only makes sense when changing thresholds also changes the default filters
+// applied to the table; with `filtersConfig` commented out it has no net
+// benefit and only wipes the user's sort / column widths.
+// watch(
+//   () => [app.model.data.log2FcThreshold, app.model.data.pAdjThreshold],
+//   () => {
+//     app.model.data.tableState = createPlDataTableStateV2();
+//   },
+// );
 
 // Get error logs
 const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframeHandle) => {
@@ -183,12 +198,13 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
   return response.values.data.join('\n');
 });
 
+const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
 </script>
 
 <template>
   <PlBlockPage
-    v-model:subtitle="app.model.args.customBlockLabel"
-    :subtitle-placeholder="app.model.args.defaultBlockLabel"
+    v-model:subtitle="app.model.data.customBlockLabel"
+    :subtitle-placeholder="defaultLabel"
     title="Differential Abundance"
   >
     <template #append>
@@ -211,7 +227,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
     </PlAlert>
     <ErrorBoundary>
       <PlAgDataTableV2
-        v-model="app.model.ui.tableState"
+        v-model="app.model.data.tableState"
         v-model:selection="selection"
         :settings="tableSettings"
         not-ready-text="Data is not computed"
@@ -223,22 +239,22 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
     <PlSlideModal v-model="settingsAreShown">
       <template #title>Settings</template>
       <PlDropdownRef
-        v-model="app.model.args.countsRef" :options="app.model.outputs.countsOptions"
-        label="Select dataset" @update:model-value="setInput"
+        v-model="app.model.data.countsRef" :options="app.model.outputs.countsOptions"
+        label="Select dataset"
       />
-      <PlDropdownMulti v-model="app.model.args.covariateRefs" :options="covariateOptions" label="Design" />
-      <PlDropdown v-model="app.model.args.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
-      <PlDropdownMulti v-model="app.model.args.numerators" :options="numeratorOptions.value" label="Numerator" >
+      <PlDropdownMulti v-model="app.model.data.covariateRefs" :options="covariateOptions" label="Design" />
+      <PlDropdown v-model="app.model.data.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
+      <PlDropdownMulti v-model="app.model.data.numerators" :options="numeratorOptions.value" label="Numerator" >
         <template #tooltip>
           Calculate a contrast per each one of the selected Numerators versus the selected control/baseline
         </template>
       </PlDropdownMulti>
-      <PlDropdown v-model="app.model.args.denominator" :options="denominatorOptions" label="Denominator" />
+      <PlDropdown v-model="app.model.data.denominator" :options="denominatorOptions" label="Denominator" />
       <!-- Content hidden until you click THRESHOLD PARAMETERS -->
       <PlAccordionSection label="THRESHOLD PARAMETERS">
         <PlRow>
           <PlNumberField
-            v-model="app.model.args.log2FcThreshold"
+            v-model="app.model.data.log2FcThreshold"
             label="Log2(FC)" :minValue="0" :step="0.1"
           >
             <template #tooltip>
@@ -248,15 +264,15 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
             </template>
           </PlNumberField>
           <PlNumberField
-            v-model="app.model.args.pAdjThreshold"
+            v-model="app.model.data.pAdjThreshold"
             label="Adjusted p-value" :minValue="0" :maxValue="1" :step="0.01"
           />
         </PlRow>
         <!-- Add warnings if selected threshold are out of most commonly used bounds -->
-        <PlAlert v-if="app.model.args.pAdjThreshold > 0.05" type="warn">
+        <PlAlert v-if="app.model.data.pAdjThreshold > 0.05" type="warn">
           {{ "Warning: The selected adjusted p-value threshold is higher than the most commonly used 0.05" }}
         </PlAlert>
-        <PlAlert v-if="app.model.args.log2FcThreshold < 0.6" type="warn">
+        <PlAlert v-if="app.model.data.log2FcThreshold < 0.6" type="warn">
           {{ "Warning: The selected Log2(FC) threshold may be too low for most use cases" }}
         </PlAlert>
       </PlAccordionSection>
@@ -271,7 +287,7 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
     <template #title>Multiple Sequence Alignment</template>
     <PlMultiSequenceAlignment
       v-if="dataType === 'differentialAbundance'"
-      v-model="app.model.ui.alignmentModel"
+      v-model="app.model.data.alignmentModel"
       :sequence-column-predicate="isSequenceColumn"
       :p-frame="app.model.outputs.msaPf"
       :selection="selection"

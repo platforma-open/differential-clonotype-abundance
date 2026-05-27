@@ -208,18 +208,18 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
     title="Differential Abundance"
   >
     <template #append>
-      <PlBtnGhost @click.stop="showSettings">
-        Settings
-        <template #append>
-          <PlMaskIcon24 name="settings" />
-        </template>
-      </PlBtnGhost>
       <PlBtnGhost
         v-if="dataType === 'differentialAbundance'"
         icon="dna"
         @click.stop="() => (multipleSequenceAlignmentOpen = true)"
       >
         Multiple Sequence Alignment
+      </PlBtnGhost>
+      <PlBtnGhost @click.stop="showSettings">
+        Settings
+        <template #append>
+          <PlMaskIcon24 name="settings" />
+        </template>
       </PlBtnGhost>
     </template>
     <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>

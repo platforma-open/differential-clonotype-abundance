@@ -45,8 +45,10 @@ wf.body(func(args) {
 		inputType = "Clonotype"
 	} else if (countsSpec.axesSpec[1].name == "pl7.app/rna-seq/geneId") {
 		inputType = "Gene"
-	} else if (countsSpec.axesSpec[1].name == "pl7.app/vdj/clusterId") {
+	} else if (countsSpec.axesSpec[1].name == "pl7.app/vdj/clusterId" || countsSpec.axesSpec[1].name == "pl7.app/clusterId") {
 		inputType = "Cluster"
+	} else if (countsSpec.axesSpec[1].name == "pl7.app/variantKey") {
+		inputType = "Peptide"
 	} else {
 		ll.panic("\n\nNot yet supported input data. Please contact Milaboratories to include it:\n%v\n", countsSpec)
 	}
@@ -117,7 +119,7 @@ wf.body(func(args) {
 
 	// @TODO: After fixing downstream block usage for axis based contrast remove this condition
 	exports := {}
-	if inputType == "Clonotype" || inputType == "Cluster" {
+	if inputType == "Clonotype" || inputType == "Cluster" || inputType == "Peptide" {
 		exports = {
 			DEG: degPF_clonotype,
 			regDir: regDirPF_clonotype

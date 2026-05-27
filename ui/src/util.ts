@@ -1,19 +1,30 @@
-import type { PColumnIdAndSpec, PColumnSpec } from '@platforma-sdk/model';
-import { type PTableColumnSpec } from '@platforma-sdk/model';
+import type { PColumnPredicate, PTableColumnSpec } from '@platforma-sdk/model';
+import { Annotation, Domain, PAxisName, readAnnotationJson, readDomain } from '@platforma-sdk/model';
 
-export const isSequenceColumn = (column: PColumnIdAndSpec) => {
-  if (!(column.spec.annotations?.['pl7.app/vdj/isAssemblingFeature'] === 'true'))
-    return false;
+export const isSequenceColumn: PColumnPredicate = ({ spec }) => {
+  // Hard rejections: length and annotation columns aren't sequences.
+  if (
+    spec.name === 'pl7.app/vdj/sequenceLength'
+    || spec.name === 'pl7.app/sequenceLength'
+    || spec.name === 'pl7.app/vdj/sequence/annotation'
+  ) return false;
+  if (readDomain(spec, Domain.Alphabet) !== 'aminoacid') return false;
 
-  const isBulkSequence = (column: PColumnSpec) =>
-    column.domain?.['pl7.app/alphabet'] === 'aminoacid';
-  const isSingleCellSequence = (column: PColumnSpec) =>
-    column.domain?.['pl7.app/vdj/scClonotypeChain/index'] === 'primary'
-    && column.domain?.['pl7.app/alphabet'] === 'aminoacid'
-    // && column.axesSpec.length >= 1
-    && column.axesSpec[0].name === 'pl7.app/vdj/scClonotypeKey';
+  // Exclude single-cell non-primary chains (e.g. light). Keep chain-less
+  // constructs like scFv where the chain/index domain key is absent entirely.
+  if (spec.axesSpec[0]?.name === PAxisName.VDJ.ScClonotypeKey) {
+    const chainIndex = readDomain(spec, Domain.VDJ.ScClonotypeChain.Index);
+    if (chainIndex !== undefined && chainIndex !== 'primary') return false;
+  }
 
-  return isBulkSequence(column.spec) || isSingleCellSequence(column.spec);
+  // Auto-select assembling features (e.g. VDJRegion, scFv construct, peptide
+  // sequence). Other aa sequences (CDR3, FR3, etc.) remain available as
+  // opt-in choices.
+  // TODO: replace direct access with `readAnnotationJson(spec, Annotation.IsAssemblingFeature)` after SDK rename.
+  const isAssemblingFeature
+    = readAnnotationJson(spec, Annotation.VDJ.IsAssemblingFeature)
+      ?? spec.annotations?.['pl7.app/isAssemblingFeature'] === 'true';
+  return { default: isAssemblingFeature };
 };
 
 export function defaultFilters(tSpec: PTableColumnSpec): (unknown | undefined) { // TODO: update type with defaultFilters feature restoring or remove

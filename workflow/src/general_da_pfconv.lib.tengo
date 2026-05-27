@@ -6,12 +6,15 @@ getColumns := func(countsSpec, blockId, species, inputType) {
 	degName := undefined
 	if species == undefined {
 		field = "log2foldchange"
-		// Get runID label
-		runIdLabel = countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"]
-		if runIdLabel == undefined {
-			runIdLabel = "pl7.app/vdj/vdjImport"
-		} else {
+		// Get runID label — modality-aware.
+		if countsSpec.axesSpec[1].domain["pl7.app/peptide/extractionRunId"] != undefined {
+			runIdLabel = "pl7.app/peptide/extractionRunId"
+		} else if countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"] != undefined {
 			runIdLabel = "pl7.app/vdj/clonotypingRunId"
+		} else {
+			ll.panic("\n\nInput axis has no recognized scoping domain key " +
+				"(expected pl7.app/peptide/extractionRunId or pl7.app/vdj/clonotypingRunId). " +
+				"Please contact Milaboratories.\n%v\n", countsSpec.axesSpec[1])
 		}
 		degName = "log2foldchange"
 	} else {

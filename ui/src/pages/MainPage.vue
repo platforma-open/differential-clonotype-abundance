@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
+import { deriveDefaultLabel } from '@platforma-open/milaboratories.differential-clonotype-abundance.model';
 import type { PlSelectionModel } from '@platforma-sdk/model';
 import { PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
 import {
@@ -19,7 +20,6 @@ import {
   useWatchFetch,
 } from '@platforma-sdk/ui-vue';
 import { computed, ref, watch } from 'vue';
-import { deriveDefaultLabel } from '@platforma-open/milaboratories.differential-clonotype-abundance.model';
 import { useApp } from '../app';
 import ErrorBoundary from '../components/ErrorBoundary.vue';
 import {
@@ -131,8 +131,9 @@ const denominatorOptions = computed(() => {
 // Skip the initial `undefined -> value` transition that fires when
 // `upgradeLegacy` hydrates persisted state, otherwise the watcher would wipe
 // the legacy numerators/denominator right after they were restored.
-watch(() => app.model.data.contrastFactor, (_newRef, oldRef) => {
+watch(() => app.model.data.contrastFactor, (newRef, oldRef) => {
   if (oldRef === undefined) return;
+  if (newRef !== undefined && plRefsEqual(oldRef, newRef)) return;
   app.model.data.numerators = [];
   app.model.data.denominator = undefined;
 });

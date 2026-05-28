@@ -22,8 +22,8 @@ export const isSequenceColumn: PColumnPredicate = ({ spec }) => {
   // opt-in choices.
   // TODO: replace direct access with `readAnnotationJson(spec, Annotation.IsAssemblingFeature)` after SDK rename.
   const isAssemblingFeature
-    = readAnnotationJson(spec, Annotation.VDJ.IsAssemblingFeature)
-      ?? spec.annotations?.['pl7.app/isAssemblingFeature'] === 'true';
+    = Boolean(readAnnotationJson(spec, Annotation.VDJ.IsAssemblingFeature)
+      ?? spec.annotations?.['pl7.app/isAssemblingFeature'] === 'true');
   return { default: isAssemblingFeature };
 };
 

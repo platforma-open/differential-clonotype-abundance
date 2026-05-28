@@ -241,16 +241,17 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <template #title>Settings</template>
       <PlDropdownRef
         v-model="app.model.data.countsRef" :options="app.model.outputs.countsOptions"
-        label="Select dataset"
+        label="Select abundance"
+        :required="true"
       />
-      <PlDropdownMulti v-model="app.model.data.covariateRefs" :options="covariateOptions" label="Design" />
-      <PlDropdown v-model="app.model.data.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
-      <PlDropdownMulti v-model="app.model.data.numerators" :options="numeratorOptions.value" label="Numerator" >
+      <PlDropdownMulti v-model="app.model.data.covariateRefs" :options="covariateOptions" label="Design" :required="true" />
+      <PlDropdown v-model="app.model.data.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" :required="true" />
+      <PlDropdownMulti v-model="app.model.data.numerators" :options="numeratorOptions.value" label="Numerator" :required="true" >
         <template #tooltip>
           Calculate a contrast per each one of the selected Numerators versus the selected control/baseline
         </template>
       </PlDropdownMulti>
-      <PlDropdown v-model="app.model.data.denominator" :options="denominatorOptions" label="Denominator" />
+      <PlDropdown v-model="app.model.data.denominator" :options="denominatorOptions" label="Denominator" :required="true" />
       <!-- Content hidden until you click THRESHOLD PARAMETERS -->
       <PlAccordionSection label="THRESHOLD PARAMETERS">
         <PlRow>

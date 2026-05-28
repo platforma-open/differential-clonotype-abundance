@@ -153,8 +153,32 @@ metadata <- read.table(opt$metadata,
 # This is done by default at the time of reading the metadata in the table
 opt$contrast_factor <- make.names(opt$contrast_factor)
 
-# Filter out samples for which we don't have metadata
-count_long <- count_long[count_long[, "Sample"] %in% rownames(metadata), ]
+# Reconcile samples between count matrix and metadata in BOTH directions.
+# A sample present in metadata but missing from counts (e.g. an upstream block
+# returned zero rows for it) would otherwise produce a count_matrix with fewer
+# columns than metadata has rows, tripping DESeq2's stopifnot.
+samples_in_counts <- unique(as.character(count_long[, "Sample"]))
+samples_in_meta   <- rownames(metadata)
+samples_common    <- intersect(samples_in_meta, samples_in_counts)
+samples_dropped   <- setdiff(samples_in_meta, samples_in_counts)
+samples_extra     <- setdiff(samples_in_counts, samples_in_meta)
+
+if (length(samples_dropped) > 0) {
+  warning(sprintf(
+    "Dropping %d sample(s) from analysis because they have no count rows: %s",
+    length(samples_dropped),
+    paste(samples_dropped, collapse = ", ")
+  ))
+}
+if (length(samples_extra) > 0) {
+  # Pre-existing behaviour: counts-only samples are filtered out silently.
+  count_long <- count_long[count_long[, "Sample"] %in% samples_common, ]
+}
+metadata <- metadata[samples_common, , drop = FALSE]
+
+if (nrow(metadata) == 0) {
+  stop("No samples remain after reconciling count matrix with metadata.")
+}
 
 # Rename some input variables
 ids_col <- opt$IDs_column
@@ -168,6 +192,20 @@ if (!(opt$numerator %in% metadata[[opt$contrast_factor]])) {
 }
 if (!(opt$denominator %in% metadata[[opt$contrast_factor]])) {
   stop("Denominator not found in contrast factor column")
+}
+
+# After dropping empty samples, the numerator/denominator groups may have
+# become too small for DESeq2. Surface a clear error instead of letting DESeq
+# fail later with an opaque message.
+group_sizes <- table(metadata[[opt$contrast_factor]])
+for (lvl in c(opt$numerator, opt$denominator)) {
+  n_lvl <- if (is.na(group_sizes[lvl])) 0 else as.integer(group_sizes[lvl])
+  if (n_lvl < 2) {
+    stop(sprintf(
+      "After dropping samples with no counts, group '%s' has %d replicate(s); at least 2 are required.",
+      lvl, n_lvl
+    ))
+  }
 }
 
 colnames(metadata) <- make.names(colnames(metadata))

@@ -34,6 +34,7 @@ self.validateInputs({
 	continueOrNot: "any",
 	allCounts: "any",
 	csvCovariates: "any",
+	csvCounts: "any",
 	numerators: "any",
 	denominator: "any",
 	contrastFactor: "any",
@@ -111,8 +112,9 @@ self.body(func(inputs) {
 			label: traceLabel}
 		)
 
-		// convert PColumns to csv
-		csvCounts := xsv.exportFrame([inputs.allCounts], "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
+		// main.tpl.tengo exports csvCounts upstream and passes it through inputs,
+		// so pre-checks and DESeq2 see the same data.
+		csvCounts := inputs.csvCounts
 
 		// Create PFrames for DEG, regulation direction and topTable
 		wf := pt.workflow().cpu(1).mem("2GiB")

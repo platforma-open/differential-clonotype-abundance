@@ -11,3 +11,12 @@ software/**/*.sw.json
 software/*.tgz
 .vscode
 .idea
+
+# Python testing toolchain (uv + pytest + ruff)
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/

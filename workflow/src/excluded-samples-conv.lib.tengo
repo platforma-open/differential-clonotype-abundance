@@ -1,0 +1,41 @@
+ll := import("@platforma-sdk/workflow-tengo:ll")
+
+getColumns := func() {
+  return {
+    axes: [
+		{
+        column: "Sample",
+        allowNA: false,
+        spec: {
+            name: "pl7.app/sampleId",
+            type: "String",
+            domain: {},
+            annotations: {
+                "pl7.app/label": "Sample"
+            }
+        }
+      }
+      ],
+    columns: [
+		{
+            column: "reason",
+            id: "reason",
+            allowNA: true,
+            spec: {
+                name: "pl7.app/differentialAbundance/excludedReason",
+                valueType: "String",
+                domain: {},
+                annotations: {
+                    "pl7.app/label": "Reason"
+                }
+                }
+		}
+      ],
+    storageFormat: "Parquet",
+    partitionKeyLength: 0
+  }
+}
+
+export ll.toStrict({
+	getColumns: getColumns
+})

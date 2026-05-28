@@ -169,6 +169,12 @@ export const platforma = BlockModelV3.create(blockDataModel)
     return ctx.createPFrame(pCols);
   })
 
+  .output('excludedSamples', (ctx) => {
+    const pCols = ctx.outputs?.resolve('excludedSamples')?.getPColumns();
+    if (pCols === undefined) return undefined;
+    return ctx.createPFrame(pCols);
+  })
+
   // Returns a map of results
   .outputWithStatus('pt', (ctx) => {
     const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();

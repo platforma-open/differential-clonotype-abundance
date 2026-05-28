@@ -1,0 +1,26 @@
+[project]
+name = "differential-clonotype-abundance-software-tests"
+version = "0.0.0"
+description = "Tests for the differential-clonotype-abundance block software components"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    # Match the prev-checks runtime deps. Keep this in sync with src/prev-checks/requirements.txt.
+    "pandas==2.2.3",
+    "patsy==1.0.1",
+    "numpy==2.2.6",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = ["I", "B", "UP", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

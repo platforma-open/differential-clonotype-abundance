@@ -199,6 +199,25 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
   return response.values.data.join('\n');
 });
 
+const excludedSamples = useWatchFetch(() => app.model.outputs.excludedSamples, async (pframeHandle) => {
+  if (!pframeHandle) {
+    return undefined;
+  }
+  const pFrame = new PFrameImpl(pframeHandle);
+  const list = await pFrame.listColumns();
+  if (!list || list.length === 0) {
+    return undefined;
+  }
+  // Find the reason column (the value column, not the axis)
+  const reasonCol = list.find((c) => c.spec.name === 'reason') ?? list[0];
+  const id = reasonCol.columnId;
+  const response = await pFrame.getUniqueValues({ columnId: id, filters: [], limit: 1000000 });
+  if (!response || response.values.data.length === 0) {
+    return undefined;
+  }
+  return [...(response.values.data as string[])].map((v) => String(v));
+});
+
 const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
 </script>
 
@@ -245,6 +264,15 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
         :required="true"
       />
       <PlDropdownMulti v-model="app.model.data.covariateRefs" :options="covariateOptions" label="Design" :required="true" />
+      <PlAlert v-if="excludedSamples.value !== undefined && excludedSamples.value.length > 0" type="warn" icon>
+        <template #default>
+          <strong>{{ excludedSamples.value.length }} sample(s) will be excluded from the analysis</strong>
+          because they have no abundance counts:
+          <ul style="margin: 4px 0 0 16px; padding: 0;">
+            <li v-for="(s, i) in excludedSamples.value" :key="i">{{ s }}</li>
+          </ul>
+        </template>
+      </PlAlert>
       <PlDropdown v-model="app.model.data.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" :required="true" />
       <PlDropdownMulti v-model="app.model.data.numerators" :options="numeratorOptions.value" label="Numerator" :required="true" >
         <template #tooltip>

@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.13.0
+
+### Minor Changes
+
+- ad305c3: Adapt block to peptide inputs
+
 ## 1.12.0
 
 ### Minor Changes

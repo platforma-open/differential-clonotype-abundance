@@ -208,8 +208,10 @@ const excludedSamples = useWatchFetch(() => app.model.outputs.excludedSamples, a
   if (!list || list.length === 0) {
     return undefined;
   }
-  // Find the reason column (the value column, not the axis)
-  const reasonCol = list.find((c) => c.spec.name === 'reason') ?? list[0];
+  // Find the reason column by its columnId (the value column, not the axis).
+  // The PColumn's spec.name is the long pl7.app/... identifier; columnId
+  // matches the `id` field set in excluded-samples-conv.lib.tengo.
+  const reasonCol = list.find((c) => c.columnId === 'reason') ?? list[0];
   const id = reasonCol.columnId;
   const response = await pFrame.getUniqueValues({ columnId: id, filters: [], limit: 1000000 });
   if (!response || response.values.data.length === 0) {

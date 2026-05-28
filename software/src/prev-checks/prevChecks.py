@@ -96,7 +96,15 @@ def main():
     # Replicate-count check on the FILTERED metadata
     contrast_levels = [str(n) for n in numerators] + [str(args.denominator)]
     insufficient = False
-    if args.contrast_factor in filtered_metadata.columns:
+    if args.contrast_factor not in filtered_metadata.columns:
+        # Misconfiguration: the label passed via --contrast_factor doesn't
+        # match any column in metadata. Surface this directly instead of
+        # letting the rank check produce a misleading downstream error.
+        errorLogs.append(
+            f"Error: Contrast factor '{args.contrast_factor}' not found in metadata columns."
+        )
+        insufficient = True
+    else:
         value_counts = filtered_metadata[args.contrast_factor].value_counts()
         for level in contrast_levels:
             n = int(value_counts.get(level, 0))

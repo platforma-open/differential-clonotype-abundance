@@ -199,7 +199,7 @@ if (!(opt$denominator %in% metadata[[opt$contrast_factor]])) {
 # fail later with an opaque message.
 group_sizes <- table(metadata[[opt$contrast_factor]])
 for (lvl in c(opt$numerator, opt$denominator)) {
-  n_lvl <- if (is.na(group_sizes[lvl])) 0 else as.integer(group_sizes[lvl])
+  n_lvl <- if (lvl %in% names(group_sizes)) as.integer(group_sizes[lvl]) else 0L
   if (n_lvl < 2) {
     stop(sprintf(
       "After dropping samples with no counts, group '%s' has %d replicate(s); at least 2 are required.",

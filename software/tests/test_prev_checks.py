@@ -255,6 +255,32 @@ class TestMultipleNumerators:
         assert any("'C'" in v and "at least 2 are required" in v for v in res["errors"]["value"])
 
 
+class TestContrastFactorMissing:
+    """The Tengo workflow passes the contrast-factor label from the PColumn
+    spec, which is normally a column header in the metadata CSV. If the label
+    doesn't match (misconfiguration), the script must stop with a clear,
+    pointed error — not silently fall through to a misleading rank-deficiency
+    message downstream."""
+
+    # Without this guard, rank check ran instead and produced a confusing
+    # "not full rank" warning that didn't name the actual problem.
+    def test_stops_with_named_contrast_factor_error(self, tmp_path):
+        # Metadata has Group + Batch, but workflow asks for "Treatment"
+        meta = pd.DataFrame(
+            {
+                "Sample": ["S1", "S2", "S3", "S4"],
+                "Group": ["A", "B", "A", "B"],
+                "Batch": ["b1", "b2", "b1", "b2"],
+            }
+        )
+        counts = _counts(["S1", "S2", "S3", "S4"])
+
+        res = _run_script(tmp_path, meta, counts, "Treatment", ["A"], "B")
+
+        assert res["continue_or_not"] == "stop"
+        assert any("Treatment" in v and "not found" in v for v in res["errors"]["value"])
+
+
 class TestOutputFileShape:
     """Both auxiliary outputs must always exist with the expected columns,
     even on the happy path. Schema stability matters for the downstream

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
+import { deriveDefaultLabel } from '@platforma-open/milaboratories.differential-clonotype-abundance.model';
 import type { PlSelectionModel } from '@platforma-sdk/model';
 import { PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
 import {
@@ -19,7 +20,6 @@ import {
   useWatchFetch,
 } from '@platforma-sdk/ui-vue';
 import { computed, ref, watch } from 'vue';
-import { deriveDefaultLabel } from '@platforma-open/milaboratories.differential-clonotype-abundance.model';
 import { useApp } from '../app';
 import ErrorBoundary from '../components/ErrorBoundary.vue';
 import {
@@ -131,8 +131,9 @@ const denominatorOptions = computed(() => {
 // Skip the initial `undefined -> value` transition that fires when
 // `upgradeLegacy` hydrates persisted state, otherwise the watcher would wipe
 // the legacy numerators/denominator right after they were restored.
-watch(() => app.model.data.contrastFactor, (_newRef, oldRef) => {
+watch(() => app.model.data.contrastFactor, (newRef, oldRef) => {
   if (oldRef === undefined) return;
+  if (newRef !== undefined && plRefsEqual(oldRef, newRef)) return;
   app.model.data.numerators = [];
   app.model.data.denominator = undefined;
 });
@@ -208,18 +209,18 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
     title="Differential Abundance"
   >
     <template #append>
-      <PlBtnGhost @click.stop="showSettings">
-        Settings
-        <template #append>
-          <PlMaskIcon24 name="settings" />
-        </template>
-      </PlBtnGhost>
       <PlBtnGhost
         v-if="dataType === 'differentialAbundance'"
         icon="dna"
         @click.stop="() => (multipleSequenceAlignmentOpen = true)"
       >
         Multiple Sequence Alignment
+      </PlBtnGhost>
+      <PlBtnGhost @click.stop="showSettings">
+        Settings
+        <template #append>
+          <PlMaskIcon24 name="settings" />
+        </template>
       </PlBtnGhost>
     </template>
     <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>
@@ -240,16 +241,17 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <template #title>Settings</template>
       <PlDropdownRef
         v-model="app.model.data.countsRef" :options="app.model.outputs.countsOptions"
-        label="Select dataset"
+        label="Select abundance"
+        :required="true"
       />
-      <PlDropdownMulti v-model="app.model.data.covariateRefs" :options="covariateOptions" label="Design" />
-      <PlDropdown v-model="app.model.data.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" />
-      <PlDropdownMulti v-model="app.model.data.numerators" :options="numeratorOptions.value" label="Numerator" >
+      <PlDropdownMulti v-model="app.model.data.covariateRefs" :options="covariateOptions" label="Design" :required="true" />
+      <PlDropdown v-model="app.model.data.contrastFactor" :options="contrastFactorOptions" label="Contrast factor" :required="true" />
+      <PlDropdownMulti v-model="app.model.data.numerators" :options="numeratorOptions.value" label="Numerator" :required="true" >
         <template #tooltip>
           Calculate a contrast per each one of the selected Numerators versus the selected control/baseline
         </template>
       </PlDropdownMulti>
-      <PlDropdown v-model="app.model.data.denominator" :options="denominatorOptions" label="Denominator" />
+      <PlDropdown v-model="app.model.data.denominator" :options="denominatorOptions" label="Denominator" :required="true" />
       <!-- Content hidden until you click THRESHOLD PARAMETERS -->
       <PlAccordionSection label="THRESHOLD PARAMETERS">
         <PlRow>

@@ -32,7 +32,8 @@
       "changelog": "file:../CHANGELOG.md",
       "tags": [
         "airr",
-        "downstream"
+        "downstream",
+        "peptide"
       ],
       "organization": {
         "name": "milaboratories",
@@ -50,5 +51,5 @@
   "devDependencies": {
     "@platforma-sdk/block-tools": "catalog:"
   },
-  "packageManager": "pnpm@9.12.0"
+  "packageManager": "pnpm@9.14.4"
 }

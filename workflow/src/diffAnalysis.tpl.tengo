@@ -43,7 +43,9 @@ self.validateInputs({
 		"pAdjThreshold,omitempty": "number",
 		"defaultConvMem,omitempty": "string",
 		"defaultConvCpu,omitempty": "number",
-		"inputType,omitempty": "string"
+		"inputType,omitempty": "string",
+		"minCounts,omitempty": "number",
+		"minSamples,omitempty": "number"
 	},
 	metaInputs: {
 		"__options__,closed": "",
@@ -68,6 +70,8 @@ self.body(func(inputs) {
 	log2FcThreshold := inputs.params.log2FcThreshold
 	pAdjThreshold := inputs.params.pAdjThreshold
 	inputType := inputs.params.inputType
+	minCounts := inputs.params.minCounts
+	minSamples := inputs.params.minSamples
 	blockId := inputs.metaInputs.blockId
 	countsSpec := inputs.allCounts.spec
 
@@ -141,11 +145,12 @@ self.body(func(inputs) {
 
 			// Clonotype specific arguments
 			} else {
-				// @TODO: improve filter, right now is min_counts in at least one sample
-				// fraction_for_filter value is set to at least 1 in R code
-				diffExec.arg("--fraction_for_filter").arg("0.01").
-				arg("--values_column").arg(countsSpec.annotations["pl7.app/label"]).
-				arg("--min_counts").arg("1")
+				// Abundance pre-filter (clonotype/cluster/peptide path): keep features with
+				// >= minCounts counts in >= minSamples samples, applied before DESeq2. Defaults
+				// (1/1) reproduce the previous no-op; users raise these in the UI for sparse data.
+				diffExec.arg("--values_column").arg(countsSpec.annotations["pl7.app/label"]).
+				arg("--min_counts").arg(string(minCounts)).
+				arg("--min_samples").arg(string(minSamples))
 			}
 
 			// Files arguments

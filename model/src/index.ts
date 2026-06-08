@@ -40,6 +40,8 @@ const blockDataModel = new DataModelBuilder()
     numerators: args?.numerators ?? [],
     log2FcThreshold: args?.log2FcThreshold ?? 1,
     pAdjThreshold: args?.pAdjThreshold ?? 0.05,
+    minCounts: args?.minCounts ?? 1,
+    minSamples: args?.minSamples ?? 1,
     tableState: uiState?.tableState ?? createPlDataTableStateV2(),
     graphState: uiState?.graphState ?? defaultGraphState(),
     alignmentModel: uiState?.alignmentModel ?? {},
@@ -53,6 +55,8 @@ const blockDataModel = new DataModelBuilder()
     numerators: [],
     log2FcThreshold: 1,
     pAdjThreshold: 0.05,
+    minCounts: 1,
+    minSamples: 1,
     tableState: createPlDataTableStateV2(),
     graphState: defaultGraphState(),
     alignmentModel: {},
@@ -93,6 +97,8 @@ export const platforma = BlockModelV3.create(blockDataModel)
     if (data.denominator === undefined) throw new Error('Denominator is required');
     if (data.log2FcThreshold === undefined) throw new Error('Log2(FC) threshold is required');
     if (data.pAdjThreshold === undefined) throw new Error('Adjusted p-value threshold is required');
+    if (data.minCounts === undefined) throw new Error('Min counts is required');
+    if (data.minSamples === undefined) throw new Error('Min samples is required');
 
     return {
       defaultBlockLabel: deriveDefaultLabel(data),
@@ -104,6 +110,8 @@ export const platforma = BlockModelV3.create(blockDataModel)
       numerators: data.numerators,
       log2FcThreshold: data.log2FcThreshold,
       pAdjThreshold: data.pAdjThreshold,
+      minCounts: data.minCounts,
+      minSamples: data.minSamples,
     };
   })
 

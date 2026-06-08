@@ -56,12 +56,12 @@ option_list <- list(
     help = "Name of column containing gene/clonotype IDs"
   ),
   make_option(c("-x", "--min_counts"),
-    type = "double", default = 5,
-    help = "minimum number of counts in fraction of samples defined by fraction_for_filter"
+    type = "double", default = 1,
+    help = "Minimum number of counts a feature must reach in at least --min_samples samples"
   ),
-  make_option(c("-y", "--fraction_for_filter"),
-    type = "double", default = 0.9,
-    help = "Fraction of samples that should have more than X min_counts to be accepted in analysis"
+  make_option(c("--min_samples"),
+    type = "double", default = 1,
+    help = "Minimum number of samples in which a feature must reach --min_counts counts to be kept"
   )
 )
 
@@ -81,7 +81,7 @@ cat("Adjusted P-value Threshold:", opt$p_threshold, "\n")
 cat("Values column name:", opt$values_column, "\n")
 cat("IDs column name:", opt$IDs_column, "\n")
 cat("Minimum counts filter:", opt$min_counts, "\n")
-cat("Sample fraction for filter:", opt$fraction_for_filter, "\n")
+cat("Minimum samples for filter:", opt$min_samples, "\n")
 cat("------------------------\n\n")
 
 if (is.null(opt$count_matrix) || is.null(opt$metadata) || is.null(opt$contrast_factor) || is.null(opt$numerator) || is.null(opt$denominator)) {
@@ -107,7 +107,7 @@ count_long <- count_long[count_long[, "Sample"] %in% rownames(metadata), ]
 values_col <- opt$values_column
 ids_col <- opt$IDs_column
 min_counts <- opt$min_counts
-filter_fraction <- opt$fraction_for_filter
+min_samples <- opt$min_samples
 
 # Validate contrast factor
 if (!opt$contrast_factor %in% colnames(metadata)) {
@@ -134,9 +134,34 @@ count_matrix <- count_matrix[, -1]
 # Convert NA values to zero
 count_matrix[is.na(count_matrix)] <- 0
 
-# Apply filter by low counts (at least filter by values in one sample)
-min_samples <- max(floor(ncol(count_matrix) * filter_fraction), 1)
-count_matrix <- count_matrix[rowSums(count_matrix >= min_counts) >= min_samples, ]
+# Apply abundance filter: keep features with >= min_counts counts in >= min_samples samples
+# (counted across all samples, before the pseudocount below). Cap min_samples at the number
+# of available samples so an over-strict setting can't silently drop every feature.
+min_samples <- min(min_samples, ncol(count_matrix))
+count_matrix <- count_matrix[rowSums(count_matrix >= min_counts) >= min_samples, , drop = FALSE]
+
+# If the filter removed every feature, write empty (header-only) results and stop:
+# DESeqDataSetFromMatrix would otherwise error on an empty matrix.
+if (nrow(count_matrix) == 0) {
+  message(
+    "No features passed the abundance filter (min_counts=", min_counts,
+    ", min_samples=", min_samples, "); writing empty results."
+  )
+  topTable_cols <- c(
+    ids_col, "Regulation", "baseMean", "log2FoldChange", "lfcSE",
+    "stat", "pvalue", "padj", "minlog10padj", "Contrast"
+  )
+  empty_top <- data.frame(matrix(ncol = length(topTable_cols), nrow = 0))
+  colnames(empty_top) <- topTable_cols
+  write.csv(empty_top, opt$output, row.names = FALSE)
+
+  deg_cols <- c(ids_col, "Contrast", "log2FoldChange", "Regulation")
+  empty_deg <- data.frame(matrix(ncol = length(deg_cols), nrow = 0))
+  colnames(empty_deg) <- deg_cols
+  write.csv(empty_deg, "DEG.csv", row.names = FALSE)
+
+  quit(save = "no", status = 0)
+}
 
 # For differentialclonotype abundance we add 1 as minimum clonotype count (after filtering)
 # count_matrix <- replace(count_matrix, count_matrix == 0, 1)

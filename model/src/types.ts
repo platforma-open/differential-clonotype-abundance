@@ -15,6 +15,8 @@ export type BlockData = {
   numerators: string[];
   log2FcThreshold: number;
   pAdjThreshold: number;
+  minCounts: number;
+  minSamples: number;
   tableState: PlDataTableStateV2;
   graphState: GraphMakerState;
   alignmentModel: PlMultiSequenceAlignmentModel;
@@ -31,6 +33,8 @@ export type BlockArgs = {
   numerators: string[];
   log2FcThreshold: number;
   pAdjThreshold: number;
+  minCounts: number;
+  minSamples: number;
 };
 
 /** Pre-V3 args shape, frozen snapshot for `upgradeLegacy`. */
@@ -44,6 +48,8 @@ export type LegacyBlockArgs = {
   numerators: string[];
   log2FcThreshold: number;
   pAdjThreshold: number;
+  minCounts?: number;
+  minSamples?: number;
 };
 
 /** Pre-V3 UI state shape, frozen snapshot for `upgradeLegacy`. */

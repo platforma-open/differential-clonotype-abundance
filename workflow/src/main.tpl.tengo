@@ -38,6 +38,8 @@ wf.body(func(args) {
 	denominator := string(args.denominator)
 	log2FcThreshold := args.log2FcThreshold
 	pAdjThreshold := args.pAdjThreshold
+	minCounts := args.minCounts
+	minSamples := args.minSamples
 
 	// Get type of input
 	inputType := undefined
@@ -100,7 +102,9 @@ wf.body(func(args) {
 			pAdjThreshold: pAdjThreshold,
 			defaultConvMem: defaultConvMem,
 			defaultConvCpu: defaultConvCpu,
-			inputType: inputType
+			inputType: inputType,
+			minCounts: minCounts,
+			minSamples: minSamples
 		},
 		metaInputs: {
 			blockId: blockId,

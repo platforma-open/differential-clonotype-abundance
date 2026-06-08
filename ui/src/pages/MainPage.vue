@@ -2,7 +2,7 @@
 import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
 import { deriveDefaultLabel } from '@platforma-open/milaboratories.differential-clonotype-abundance.model';
 import type { PlSelectionModel } from '@platforma-sdk/model';
-import { PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
+import { isPColumnSpec, PFrameImpl, plRefsEqual } from '@platforma-sdk/model';
 import {
   PlAccordionSection,
   PlAgDataTableV2,
@@ -200,6 +200,15 @@ const errorLogs = useWatchFetch(() => app.model.outputs.errorLogs, async (pframe
 });
 
 const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
+
+// Detect gene (bulk RNA-seq) input from the selected dataset spec, before results are
+// computed. The abundance filter applies only to the clonotype/cluster/peptide path
+// (the gene DESeq2 script has its own fixed filter), so hide it for gene inputs.
+const isGeneInput = computed(() => {
+  const spec = app.model.outputs.datasetSpec;
+  if (!spec || !isPColumnSpec(spec)) return false;
+  return spec.axesSpec?.[1]?.name === 'pl7.app/rna-seq/geneId';
+});
 </script>
 
 <template>
@@ -254,6 +263,21 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <PlDropdown v-model="app.model.data.denominator" :options="denominatorOptions" label="Denominator" :required="true" />
       <!-- Content hidden until you click THRESHOLD PARAMETERS -->
       <PlAccordionSection label="THRESHOLD PARAMETERS">
+        <PlRow v-if="!isGeneInput">
+          <PlNumberField
+            v-model="app.model.data.minCounts"
+            label="Min counts" :minValue="1" :step="1"
+          >
+            <template #tooltip>
+              Keep only features with at least this many counts in at least "Min samples"
+              samples. Raise these to drop sparse features and reduce the multiple-testing burden.
+            </template>
+          </PlNumberField>
+          <PlNumberField
+            v-model="app.model.data.minSamples"
+            label="Min samples" :minValue="1" :step="1"
+          />
+        </PlRow>
         <PlRow>
           <PlNumberField
             v-model="app.model.data.log2FcThreshold"

@@ -6,6 +6,7 @@ xsv := import("@platforma-sdk/workflow-tengo:pframes.xsv")
 pframes := import("@platforma-sdk/workflow-tengo:pframes")
 render := import("@platforma-sdk/workflow-tengo:render")
 ll := import("@platforma-sdk/workflow-tengo:ll")
+pt := import("@platforma-sdk/workflow-tengo:pt")
 
 pfErrorLogsConv := import(":pf-de-errors-conv")
 diffAnalysisTpl := assets.importTemplate(":diffAnalysis")
@@ -61,9 +62,20 @@ wf.body(func(args) {
 	for _, v in args.metaRefs {
 		covariates = append(covariates, v)
 	}
-	
+
 	// convert PColumns to csv
 	csvCovariates := xsv.exportFrame(covariates, "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
+	csvCounts := xsv.exportFrame([allCounts], "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
+
+	// Restrict covariates to the samples actually present in the selected counts column.
+	sampleFilterWf := pt.workflow().cpu(defaultConvCpu).mem(defaultConvMem)
+	countsSamples := sampleFilterWf.frame(csvCounts, {xsvType: "csv", inferSchema: false}).
+			select("Sample").
+			unique()
+	sampleFilterWf.frame(csvCovariates, {xsvType: "csv", inferSchema: false}).
+			join(countsSamples, {how: "inner", on: ["Sample"], coalesce: true}).
+			save("covariates.csv")
+	csvCovariates = sampleFilterWf.run().getFile("covariates.csv")
 
 	// Run script to check if metadata matrix will be full rank
 	continueCheck := exec.builder().
@@ -91,6 +103,7 @@ wf.body(func(args) {
 	diffAnalysis := render.create(diffAnalysisTpl, {
 		continueOrNot: continueOrNot,
 		allCounts: allCounts,
+		csvCounts: csvCounts,
 		csvCovariates: csvCovariates,
 		numerators: args.numerators,
 		denominator: denominator,

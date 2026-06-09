@@ -33,6 +33,7 @@ self.validateInputs({
 	"__options__,closed": "",
 	continueOrNot: "any",
 	allCounts: "any",
+	csvCounts: "any",
 	csvCovariates: "any",
 	numerators: "any",
 	denominator: "any",
@@ -70,6 +71,7 @@ self.body(func(inputs) {
 	inputType := inputs.params.inputType
 	blockId := inputs.metaInputs.blockId
 	countsSpec := inputs.allCounts.spec
+	csvCounts := inputs.csvCounts
 
 	software := undefined
 	degImportParams := undefined
@@ -110,9 +112,6 @@ self.body(func(inputs) {
 			{type: "milaboratories.differential-analysis", importance: 30, 
 			label: traceLabel}
 		)
-
-		// convert PColumns to csv
-		csvCounts := xsv.exportFrame([inputs.allCounts], "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
 
 		// Create PFrames for DEG, regulation direction and topTable
 		wf := pt.workflow().cpu(1).mem("2GiB")

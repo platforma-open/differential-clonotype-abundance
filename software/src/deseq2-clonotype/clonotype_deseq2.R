@@ -142,6 +142,9 @@ count_matrix <- count_matrix[rowSums(count_matrix >= min_counts) >= min_samples,
 # count_matrix <- replace(count_matrix, count_matrix == 0, 1)
 count_matrix <- count_matrix + 1
 
+# Subset and reorder metadata to the samples present in the count matrix.
+metadata <- metadata[colnames(count_matrix), , drop = FALSE]
+
 # Prepare DESeq2 dataset
 set.seed(42)
 dds <- DESeqDataSetFromMatrix(

@@ -187,6 +187,9 @@ min_samples <- floor(ncol(count_matrix) / 2)
 # Apply the filter
 count_matrix <- count_matrix[rowSums(count_matrix >= filter_threshold) >= min_samples, ]
 
+# Subset and reorder metadata to the samples present in the count matrix.
+metadata <- metadata[colnames(count_matrix), , drop = FALSE]
+
 # Prepare DESeq2 dataset
 dds <- DESeqDataSetFromMatrix(
   countData = count_matrix,

@@ -1,5 +1,13 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.8.1
+
+### Patch Changes
+
+- 72a30e0: Make sure covariates file only contains samples from the selected input dataset
+- Updated dependencies [72a30e0]
+  - @platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software@1.16.2
+
 ## 2.8.0
 
 ### Minor Changes

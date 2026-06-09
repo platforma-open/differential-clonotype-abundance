@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.16.2
+
+### Patch Changes
+
+- 72a30e0: Make sure covariates file only contains samples from the selected input dataset
+
 ## 1.16.1
 
 ### Patch Changes

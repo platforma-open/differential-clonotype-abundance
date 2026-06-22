@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { PredefinedGraphOption } from '@milaboratories/graph-maker';
-import { GraphMaker } from '@milaboratories/graph-maker';
-import { PlMultiSequenceAlignment } from '@milaboratories/multi-sequence-alignment';
-import type { PColumnIdAndSpec, PlSelectionModel } from '@platforma-sdk/model';
-import { PlBtnGhost, PlSlideModal } from '@platforma-sdk/ui-vue';
-import { computed, ref } from 'vue';
-import { useApp } from '../app';
-import { isSequenceColumn } from '../util';
+import type { PredefinedGraphOption } from "@milaboratories/graph-maker";
+import { GraphMaker } from "@milaboratories/graph-maker";
+import { PlMultiSequenceAlignment } from "@milaboratories/multi-sequence-alignment";
+import type { PColumnIdAndSpec, PlSelectionModel } from "@platforma-sdk/model";
+import { PlBtnGhost, PlSlideModal } from "@platforma-sdk/ui-vue";
+import { computed, ref } from "vue";
+import { useApp } from "../app";
+import { isSequenceColumn } from "../util";
 
 const app = useApp();
 
@@ -17,61 +17,66 @@ function getIndex(name: string, pcols: PColumnIdAndSpec[]): number {
 }
 
 // Find out data type of the first column
-let dataType: 'rna-seq' | 'differentialAbundance' | undefined;
+let dataType: "rna-seq" | "differentialAbundance" | undefined;
 if (app.model.outputs.topTablePcols !== undefined) {
-  if (getIndex('pl7.app/rna-seq/log2foldchange', app.model.outputs.topTablePcols) !== -1) {
-    dataType = 'rna-seq';
-  } else if (getIndex('pl7.app/differentialAbundance/log2foldchange', app.model.outputs.topTablePcols) !== -1) {
-    dataType = 'differentialAbundance';
+  if (getIndex("pl7.app/rna-seq/log2foldchange", app.model.outputs.topTablePcols) !== -1) {
+    dataType = "rna-seq";
+  } else if (
+    getIndex("pl7.app/differentialAbundance/log2foldchange", app.model.outputs.topTablePcols) !== -1
+  ) {
+    dataType = "differentialAbundance";
   }
 }
 
-function getDefaultOptions(dataType: 'rna-seq' | 'differentialAbundance' | undefined, topTablePcols?: PColumnIdAndSpec[]) {
+function getDefaultOptions(
+  dataType: "rna-seq" | "differentialAbundance" | undefined,
+  topTablePcols?: PColumnIdAndSpec[],
+) {
   if (!topTablePcols || dataType === undefined) {
     return undefined;
   }
 
-  const defaults: PredefinedGraphOption<'scatterplot-umap'>[] = [
+  const defaults: PredefinedGraphOption<"scatterplot-umap">[] = [
     {
-      inputName: 'x',
-      selectedSource: topTablePcols[getIndex('pl7.app/' + dataType + '/log2foldchange',
-        topTablePcols)].spec,
+      inputName: "x",
+      selectedSource:
+        topTablePcols[getIndex("pl7.app/" + dataType + "/log2foldchange", topTablePcols)].spec,
     },
     {
-      inputName: 'y',
-      selectedSource: topTablePcols[getIndex('pl7.app/' + dataType + '/minlog10padj',
-        topTablePcols)].spec,
+      inputName: "y",
+      selectedSource:
+        topTablePcols[getIndex("pl7.app/" + dataType + "/minlog10padj", topTablePcols)].spec,
     },
     {
-      inputName: 'grouping',
-      selectedSource: topTablePcols[getIndex('pl7.app/' + dataType + '/regulationDirection',
-        topTablePcols)].spec,
+      inputName: "grouping",
+      selectedSource:
+        topTablePcols[getIndex("pl7.app/" + dataType + "/regulationDirection", topTablePcols)].spec,
     },
     // Contrast
     {
-      inputName: 'tabBy',
-      selectedSource: topTablePcols[getIndex('pl7.app/' + dataType + '/log2foldchange',
-        topTablePcols)].spec.axesSpec[0],
+      inputName: "tabBy",
+      selectedSource:
+        topTablePcols[getIndex("pl7.app/" + dataType + "/log2foldchange", topTablePcols)].spec
+          .axesSpec[0],
     },
   ];
 
-  if (dataType == 'rna-seq') {
+  if (dataType == "rna-seq") {
     defaults.push({
-      inputName: 'label',
-      selectedSource: topTablePcols[getIndex('pl7.app/rna-seq/genesymbol',
-        topTablePcols)].spec,
+      inputName: "label",
+      selectedSource: topTablePcols[getIndex("pl7.app/rna-seq/genesymbol", topTablePcols)].spec,
     });
     defaults.push({
-      inputName: 'tooltipContent',
-      selectedSource: topTablePcols[getIndex('pl7.app/rna-seq/genesymbol',
-        topTablePcols)].spec,
+      inputName: "tooltipContent",
+      selectedSource: topTablePcols[getIndex("pl7.app/rna-seq/genesymbol", topTablePcols)].spec,
     });
   } else {
     // Clonotype ID
     defaults.push({
-      inputName: 'tooltipContent',
-      selectedSource: topTablePcols[getIndex('pl7.app/' + dataType + '/log2foldchange',
-        topTablePcols)].spec.axesSpec[1],
+      inputName: "tooltipContent",
+      selectedSource:
+        topTablePcols[getIndex("pl7.app/" + dataType + "/log2foldchange", topTablePcols)].spec
+          .axesSpec[1],
     });
   }
 

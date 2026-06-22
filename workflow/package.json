@@ -1,19 +1,22 @@
 {
   "name": "@platforma-open/milaboratories.differential-clonotype-abundance.workflow",
   "version": "2.8.1",
-  "type": "module",
   "description": "Block Workflow",
+  "type": "module",
   "scripts": {
-    "build": "rm -rf dist && pl-tengo check && pl-tengo build",
-    "format": "/usr/bin/env emacs --script ./format.el",
-    "do-pack": "rm -f *.tgz && pnpm pack && mv *.tgz package.tgz"
+    "build": "shx rm -rf dist && pl-tengo build",
+    "format": "/usr/bin/env emacs --script ./format.el || echo 'No emacs.'",
+    "do-pack": "rm -f *.tgz && pnpm pack && mv *.tgz package.tgz",
+    "check": "pl-tengo check"
   },
   "dependencies": {
+    "@milaboratories/software-pframes-conv": "catalog:",
     "@platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software": "workspace:*",
-    "@platforma-sdk/workflow-tengo": "catalog:",
-    "@milaboratories/software-pframes-conv": "catalog:"
+    "@platforma-sdk/workflow-tengo": "catalog:"
   },
   "devDependencies": {
-    "@platforma-sdk/tengo-builder": "catalog:"
+    "@platforma-sdk/tengo-builder": "catalog:",
+    "@platforma-sdk/test": "catalog:",
+    "shx": "catalog:"
   }
 }

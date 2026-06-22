@@ -1,26 +1,28 @@
 {
   "name": "@platforma-open/milaboratories.differential-clonotype-abundance.test",
-  "private": true,
   "version": "1.3.0",
+  "private": true,
   "description": "Block tests",
+  "keywords": [],
+  "files": [],
   "type": "module",
   "scripts": {
-    "test": "vitest --run --passWithNoTests",
-    "lint": "eslint . --max-warnings=0 || true",
-    "type-check": "echo 'No test files to check'"
+    "test": "vitest run --passWithNoTests",
+    "type-check": "echo 'No test files to check'",
+    "fmt": "ts-builder format",
+    "check": "ts-builder check --target block-test"
   },
-  "files": [],
-  "keywords": [],
   "dependencies": {
     "this-block": "workspace:@platforma-open/milaboratories.differential-clonotype-abundance@*"
   },
   "devDependencies": {
     "@milaboratories/ts-builder": "catalog:",
     "@milaboratories/ts-configs": "catalog:",
-    "@platforma-sdk/eslint-config": "catalog:",
     "@platforma-sdk/test": "catalog:",
     "eslint": "catalog:",
-    "vitest": "catalog:",
-    "typescript": "catalog:"
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": "*"
   }
 }

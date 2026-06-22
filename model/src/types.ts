@@ -1,9 +1,9 @@
-import type { GraphMakerState } from '@milaboratories/graph-maker';
+import type { GraphMakerState } from "@milaboratories/graph-maker";
 import type {
   PlDataTableStateV2,
   PlMultiSequenceAlignmentModel,
   PlRef,
-} from '@platforma-sdk/model';
+} from "@platforma-sdk/model";
 
 /** Unified V3 data: persisted state shaped on the UI's terms. */
 export type BlockData = {

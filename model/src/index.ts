@@ -3,7 +3,7 @@ import type {
   PColumn,
   PColumnIdAndSpec,
   TreeNodeAccessor,
-} from '@platforma-sdk/model';
+} from "@platforma-sdk/model";
 import {
   BlockModelV3,
   createPFrameForGraphs,
@@ -13,26 +13,21 @@ import {
   DataModelBuilder,
   getUniquePartitionKeys,
   isPColumnSpec,
-} from '@platforma-sdk/model';
-import type {
-  BlockArgs,
-  BlockData,
-  LegacyBlockArgs,
-  LegacyBlockUiState,
-} from './types';
+} from "@platforma-sdk/model";
+import type { BlockArgs, BlockData, LegacyBlockArgs, LegacyBlockUiState } from "./types";
 
-export * from './types';
+export * from "./types";
 
-const defaultGraphState = (): BlockData['graphState'] => ({
-  title: 'Differential abundance',
-  template: 'dots',
+const defaultGraphState = (): BlockData["graphState"] => ({
+  title: "Differential abundance",
+  template: "dots",
   currentTab: null,
 });
 
 const blockDataModel = new DataModelBuilder()
-  .from<BlockData>('V20260520')
+  .from<BlockData>("V20260520")
   .upgradeLegacy<LegacyBlockArgs, LegacyBlockUiState>(({ args, uiState }) => ({
-    customBlockLabel: args?.customBlockLabel ?? '',
+    customBlockLabel: args?.customBlockLabel ?? "",
     countsRef: args?.countsRef,
     covariateRefs: args?.covariateRefs ?? [],
     contrastFactor: args?.contrastFactor,
@@ -45,7 +40,7 @@ const blockDataModel = new DataModelBuilder()
     alignmentModel: uiState?.alignmentModel ?? {},
   }))
   .init(() => ({
-    customBlockLabel: '',
+    customBlockLabel: "",
     countsRef: undefined,
     covariateRefs: [],
     contrastFactor: undefined,
@@ -60,39 +55,38 @@ const blockDataModel = new DataModelBuilder()
 
 export function deriveDefaultLabel(data: BlockData): string {
   if (data.denominator && data.numerators.length > 0) {
-    const numeratorsPart = data.numerators.join(', ');
+    const numeratorsPart = data.numerators.join(", ");
     return `${numeratorsPart} vs ${data.denominator} (log2FC: ${data.log2FcThreshold}, pAdj: ${data.pAdjThreshold})`;
   }
-  return 'Configure comparison';
+  return "Configure comparison";
 }
 
 // get main Pcols for plot and tables
-function filterPCols(
-  pCols: PColumn<TreeNodeAccessor>[],
-): PColumn<TreeNodeAccessor>[] {
+function filterPCols(pCols: PColumn<TreeNodeAccessor>[]): PColumn<TreeNodeAccessor>[] {
   // Allow only log2 FC and -log10 Padjust as options for volcano axis
   return pCols.filter(
-    (col) => (col.spec.name === 'pl7.app/differentialAbundance/log2foldchange'
-      || col.spec.name === 'pl7.app/differentialAbundance/minlog10padj'
-      || col.spec.name === 'pl7.app/differentialAbundance/regulationDirection'
-      || col.spec.name === 'pl7.app/differentialAbundance/contrastGroup')
-    || (col.spec.name === 'pl7.app/rna-seq/log2foldchange'
-      || col.spec.name === 'pl7.app/rna-seq/minlog10padj'
-      || col.spec.name === 'pl7.app/rna-seq/regulationDirection'
-      || col.spec.name === 'pl7.app/rna-seq/genesymbol'
-      || col.spec.name === 'pl7.app/rna-seq/contrastGroup'),
+    (col) =>
+      col.spec.name === "pl7.app/differentialAbundance/log2foldchange" ||
+      col.spec.name === "pl7.app/differentialAbundance/minlog10padj" ||
+      col.spec.name === "pl7.app/differentialAbundance/regulationDirection" ||
+      col.spec.name === "pl7.app/differentialAbundance/contrastGroup" ||
+      col.spec.name === "pl7.app/rna-seq/log2foldchange" ||
+      col.spec.name === "pl7.app/rna-seq/minlog10padj" ||
+      col.spec.name === "pl7.app/rna-seq/regulationDirection" ||
+      col.spec.name === "pl7.app/rna-seq/genesymbol" ||
+      col.spec.name === "pl7.app/rna-seq/contrastGroup",
   );
 }
 
 export const platforma = BlockModelV3.create(blockDataModel)
 
   .args<BlockArgs>((data) => {
-    if (data.countsRef === undefined) throw new Error('Dataset is required');
-    if (data.contrastFactor === undefined) throw new Error('Contrast factor is required');
-    if (data.numerators.length === 0) throw new Error('At least one numerator is required');
-    if (data.denominator === undefined) throw new Error('Denominator is required');
-    if (data.log2FcThreshold === undefined) throw new Error('Log2(FC) threshold is required');
-    if (data.pAdjThreshold === undefined) throw new Error('Adjusted p-value threshold is required');
+    if (data.countsRef === undefined) throw new Error("Dataset is required");
+    if (data.contrastFactor === undefined) throw new Error("Contrast factor is required");
+    if (data.numerators.length === 0) throw new Error("At least one numerator is required");
+    if (data.denominator === undefined) throw new Error("Denominator is required");
+    if (data.log2FcThreshold === undefined) throw new Error("Log2(FC) threshold is required");
+    if (data.pAdjThreshold === undefined) throw new Error("Adjusted p-value threshold is required");
 
     return {
       defaultBlockLabel: deriveDefaultLabel(data),
@@ -107,27 +101,27 @@ export const platforma = BlockModelV3.create(blockDataModel)
     };
   })
 
-  .output('countsOptions', (ctx) => {
-    const allOptions = ctx.resultPool.getOptions([
-      // Clonotyoe input
-      {
-        axes: [
-          { name: 'pl7.app/sampleId' },
-          { },
-        ],
-        annotations: { 'pl7.app/isAbundance': 'true',
-          'pl7.app/abundance/normalized': 'false',
-          'pl7.app/abundance/isPrimary': 'true' },
-      },
-      // RNA input
-      {
-        axes: [
-          { name: 'pl7.app/sampleId' },
-          { },
-        ],
-        annotations: { 'pl7.app/isAbundance': 'true' },
-        domain: { 'pl7.app/rna-seq/normalized': 'false' },
-      }], { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false });
+  .output("countsOptions", (ctx) => {
+    const allOptions = ctx.resultPool.getOptions(
+      [
+        // Clonotyoe input
+        {
+          axes: [{ name: "pl7.app/sampleId" }, {}],
+          annotations: {
+            "pl7.app/isAbundance": "true",
+            "pl7.app/abundance/normalized": "false",
+            "pl7.app/abundance/isPrimary": "true",
+          },
+        },
+        // RNA input
+        {
+          axes: [{ name: "pl7.app/sampleId" }, {}],
+          annotations: { "pl7.app/isAbundance": "true" },
+          domain: { "pl7.app/rna-seq/normalized": "false" },
+        },
+      ],
+      { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false },
+    );
 
     // Filter out single-cell and clustered data for now
     return allOptions.filter((option) => {
@@ -136,25 +130,25 @@ export const platforma = BlockModelV3.create(blockDataModel)
         return true; // Keep non-p-column options
       }
 
-      const hasScClonotypeKey = pColumnSpec.axesSpec?.length >= 2
-        && (pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/scClonotypeKeyRR'
-          || pColumnSpec.axesSpec[1]?.name === 'pl7.app/vdj/clusterIdRR'
-        );
+      const hasScClonotypeKey =
+        pColumnSpec.axesSpec?.length >= 2 &&
+        (pColumnSpec.axesSpec[1]?.name === "pl7.app/vdj/scClonotypeKeyRR" ||
+          pColumnSpec.axesSpec[1]?.name === "pl7.app/vdj/clusterIdRR");
 
       return !hasScClonotypeKey;
     });
   })
 
-  .output('metadataOptions', (ctx) =>
-    ctx.resultPool.getOptions((spec) => isPColumnSpec(spec) && spec.name === 'pl7.app/metadata'),
+  .output("metadataOptions", (ctx) =>
+    ctx.resultPool.getOptions((spec) => isPColumnSpec(spec) && spec.name === "pl7.app/metadata"),
   )
 
-  .output('datasetSpec', (ctx) => {
+  .output("datasetSpec", (ctx) => {
     if (ctx.data.countsRef) return ctx.resultPool.getSpecByRef(ctx.data.countsRef);
     else return undefined;
   })
 
-  .output('denominatorOptions', (ctx) => {
+  .output("denominatorOptions", (ctx) => {
     if (!ctx.data.contrastFactor) return undefined;
 
     const pColumn = ctx.resultPool.getPColumnByRef(ctx.data.contrastFactor);
@@ -163,21 +157,21 @@ export const platforma = BlockModelV3.create(blockDataModel)
     return ctx.createPFrame([pColumn]);
   })
 
-  .output('errorLogs', (ctx) => {
-    const pCols = ctx.outputs?.resolve('errorLogs')?.getPColumns();
+  .output("errorLogs", (ctx) => {
+    const pCols = ctx.outputs?.resolve("errorLogs")?.getPColumns();
     if (pCols === undefined) return undefined;
     return ctx.createPFrame(pCols);
   })
 
   // Returns a map of results
-  .outputWithStatus('pt', (ctx) => {
-    const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+  .outputWithStatus("pt", (ctx) => {
+    const pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
     if (pCols === undefined) return undefined;
     return createPlDataTableV2(ctx, pCols, ctx.data.tableState);
   })
 
-  .output('sheets', (ctx) => {
-    const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+  .output("sheets", (ctx) => {
+    const pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
     if (pCols === undefined || pCols.length === 0) return undefined;
 
     // Get unique contrast values
@@ -187,8 +181,8 @@ export const platforma = BlockModelV3.create(blockDataModel)
     return [createPlDataTableSheet(ctx, pCols[0].spec.axesSpec[0], contrasts)];
   })
 
-  .output('test', (ctx) => {
-    const pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+  .output("test", (ctx) => {
+    const pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
     if (pCols === undefined || pCols.length === 0) return undefined;
 
     // Get unique contrast values
@@ -198,8 +192,8 @@ export const platforma = BlockModelV3.create(blockDataModel)
     return getUniquePartitionKeys(pCols[0].data);
   })
 
-  .outputWithStatus('topTablePf', (ctx) => {
-    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+  .outputWithStatus("topTablePf", (ctx) => {
+    let pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
     if (pCols === undefined) return undefined;
 
     pCols = filterPCols(pCols);
@@ -207,8 +201,8 @@ export const platforma = BlockModelV3.create(blockDataModel)
     return createPFrameForGraphs(ctx, pCols);
   })
 
-  .output('topTablePcols', (ctx) => {
-    let pCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+  .output("topTablePcols", (ctx) => {
+    let pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
     if (pCols === undefined) return undefined;
     pCols = filterPCols(pCols);
 
@@ -217,34 +211,33 @@ export const platforma = BlockModelV3.create(blockDataModel)
         ({
           columnId: c.id,
           spec: c.spec,
-        } satisfies PColumnIdAndSpec),
+        }) satisfies PColumnIdAndSpec,
     );
   })
 
-  .output('msaPf', (ctx) => {
-    const msaCols = ctx.outputs?.resolve('topTablePf')?.getPColumns();
+  .output("msaPf", (ctx) => {
+    const msaCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
     if (!msaCols) return undefined;
 
     const datasetRef = ctx.data.countsRef;
     if (datasetRef === undefined) return undefined;
 
-    const seqCols = ctx.resultPool.getAnchoredPColumns(
-      { main: datasetRef },
-      [{ axes: [{ anchor: 'main', idx: 1 }] }],
-    );
+    const seqCols = ctx.resultPool.getAnchoredPColumns({ main: datasetRef }, [
+      { axes: [{ anchor: "main", idx: 1 }] },
+    ]);
     if (seqCols === undefined) return undefined;
 
     return createPFrameForGraphs(ctx, [...msaCols, ...seqCols]);
   })
 
-  .title(() => 'Differential abundance')
+  .title(() => "Differential abundance")
 
   .subtitle((ctx) => ctx.data.customBlockLabel || deriveDefaultLabel(ctx.data))
 
-  .sections((_ctx) => ([
-    { type: 'link' as const, href: '/' as const, label: 'Main' },
-    { type: 'link' as const, href: '/graph' as const, label: 'Volcano plot' },
-  ]))
+  .sections((_ctx) => [
+    { type: "link" as const, href: "/" as const, label: "Main" },
+    { type: "link" as const, href: "/graph" as const, label: "Volcano plot" },
+  ])
 
   .done();
 

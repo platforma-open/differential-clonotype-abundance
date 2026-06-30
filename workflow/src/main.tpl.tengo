@@ -49,7 +49,14 @@ wf.body(func(args) {
 	} else if (countsSpec.axesSpec[1].name == "pl7.app/vdj/clusterId" || countsSpec.axesSpec[1].name == "pl7.app/clusterId") {
 		inputType = "Cluster"
 	} else if (countsSpec.axesSpec[1].name == "pl7.app/variantKey") {
-		inputType = "Peptide"
+		// Both peptide-extraction and synthetic-repertoire-profiler key on
+		// pl7.app/variantKey; the axis domain distinguishes them. Same per-variant
+		// DA path either way — only the user-facing label differs.
+		if countsSpec.axesSpec[1].domain["pl7.app/repertoire/extractionRunId"] != undefined {
+			inputType = "Variant"
+		} else {
+			inputType = "Peptide"
+		}
 	} else {
 		ll.panic("\n\nNot yet supported input data. Please contact Milaboratories to include it:\n%v\n", countsSpec)
 	}
@@ -132,7 +139,7 @@ wf.body(func(args) {
 
 	// @TODO: After fixing downstream block usage for axis based contrast remove this condition
 	exports := {}
-	if inputType == "Clonotype" || inputType == "Cluster" || inputType == "Peptide" {
+	if inputType == "Clonotype" || inputType == "Cluster" || inputType == "Peptide" || inputType == "Variant" {
 		exports = {
 			DEG: degPF_clonotype,
 			regDir: regDirPF_clonotype

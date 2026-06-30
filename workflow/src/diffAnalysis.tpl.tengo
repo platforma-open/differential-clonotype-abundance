@@ -161,7 +161,7 @@ self.body(func(inputs) {
 			// @TODO: Update downstream blocks like clonotype-browser and antibody-tcr-leads
 			// and clonotype enrichment to work with axis stored contrast
 			// Temporal fix to export clonotype data in old way
-			if inputType == "Clonotype" || inputType == "Cluster" || inputType == "Peptide" {
+			if inputType == "Clonotype" || inputType == "Cluster" || inputType == "Peptide" || inputType == "Variant" {
 				comparison := inputType + " " + numerator + " - vs - " + denominator
 
 				// Add DEG export with specific import params. Adding new csv output to script with only DEGs and logFC
@@ -173,11 +173,13 @@ self.body(func(inputs) {
 				runIdLabel := undefined
 				if countsSpec.axesSpec[1].domain["pl7.app/peptide/extractionRunId"] != undefined {
 					runIdLabel = "pl7.app/peptide/extractionRunId"
+				} else if countsSpec.axesSpec[1].domain["pl7.app/repertoire/extractionRunId"] != undefined {
+					runIdLabel = "pl7.app/repertoire/extractionRunId"
 				} else if countsSpec.axesSpec[1].domain["pl7.app/vdj/clonotypingRunId"] != undefined {
 					runIdLabel = "pl7.app/vdj/clonotypingRunId"
 				} else {
 					ll.panic("\n\nInput axis has no recognized scoping domain key " +
-						"(expected pl7.app/peptide/extractionRunId or pl7.app/vdj/clonotypingRunId). " +
+						"(expected pl7.app/peptide/extractionRunId, pl7.app/repertoire/extractionRunId, or pl7.app/vdj/clonotypingRunId). " +
 						"Please contact Milaboratories.\n%v\n", countsSpec.axesSpec[1])
 				}
 			

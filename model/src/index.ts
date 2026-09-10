@@ -14,9 +14,11 @@ import {
   getUniquePartitionKeys,
   isPColumnSpec,
 } from "@platforma-sdk/model";
+import { kind } from "@platforma-open/milaboratories.differential-clonotype-abundance.kind";
 import type { BlockArgs, BlockData, LegacyBlockArgs, LegacyBlockUiState } from "./types";
 
 export * from "./types";
+export type * from "@platforma-open/milaboratories.differential-clonotype-abundance.kind";
 
 const defaultGraphState = (): BlockData["graphState"] => ({
   title: "Differential abundance",
@@ -24,7 +26,7 @@ const defaultGraphState = (): BlockData["graphState"] => ({
   currentTab: null,
 });
 
-const blockDataModel = new DataModelBuilder()
+const blockDataModel = new DataModelBuilder({ kind })
   .from<BlockData>("V20260520")
   .upgradeLegacy<LegacyBlockArgs, LegacyBlockUiState>(({ args, uiState }) => ({
     customBlockLabel: args?.customBlockLabel ?? "",
@@ -39,15 +41,15 @@ const blockDataModel = new DataModelBuilder()
     graphState: uiState?.graphState ?? defaultGraphState(),
     alignmentModel: uiState?.alignmentModel ?? {},
   }))
-  .init(() => ({
-    customBlockLabel: "",
-    countsRef: undefined,
-    covariateRefs: [],
-    contrastFactor: undefined,
-    denominator: undefined,
-    numerators: [],
-    log2FcThreshold: 1,
-    pAdjThreshold: 0.05,
+  .init(({ params }) => ({
+    customBlockLabel: params?.customBlockLabel ?? "",
+    countsRef: params?.countsRef,
+    covariateRefs: params?.covariateRefs ?? [],
+    contrastFactor: params?.contrastFactor,
+    denominator: params?.denominator,
+    numerators: params?.numerators ?? [],
+    log2FcThreshold: params?.log2FcThreshold ?? 1,
+    pAdjThreshold: params?.pAdjThreshold ?? 0.05,
     tableState: createPlDataTableStateV2(),
     graphState: defaultGraphState(),
     alignmentModel: {},
@@ -78,7 +80,7 @@ function filterPCols(pCols: PColumn<TreeNodeAccessor>[]): PColumn<TreeNodeAccess
   );
 }
 
-export const platforma = BlockModelV3.create(blockDataModel)
+export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind })
 
   .args<BlockArgs>((data) => {
     if (data.countsRef === undefined) throw new Error("Dataset is required");
@@ -100,6 +102,20 @@ export const platforma = BlockModelV3.create(blockDataModel)
       pAdjThreshold: data.pAdjThreshold,
     };
   })
+
+  // Inverse of the kind's init-params contract: every field a user sets by
+  // hand. `defaultBlockLabel` is not among them -- it is derived above from
+  // the comparison itself, never stored.
+  .templateParams((data) => ({
+    countsRef: data.countsRef,
+    covariateRefs: data.covariateRefs,
+    contrastFactor: data.contrastFactor,
+    numerators: data.numerators,
+    denominator: data.denominator,
+    log2FcThreshold: data.log2FcThreshold,
+    pAdjThreshold: data.pAdjThreshold,
+    customBlockLabel: data.customBlockLabel,
+  }))
 
   .output("countsOptions", (ctx) => {
     const allOptions = ctx.resultPool.getOptions(

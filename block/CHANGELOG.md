@@ -1,5 +1,14 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.8.0
+
+### Minor Changes
+
+- ca7fb56: Add the block kind.
+
+  The block gains an init-params contract, so a project template can create it
+  with the comparison already configured.
+
 ## 1.7.3
 
 ### Patch Changes

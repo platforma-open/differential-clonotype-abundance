@@ -1,5 +1,16 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.14.0
+
+### Minor Changes
+
+- 463cf4e: Hide the multiple sequence alignment entry point for peptide datasets, including the table cell button.
+
+### Patch Changes
+
+- Updated dependencies [463cf4e]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.model@2.10.0
+
 ## 1.13.3
 
 ### Patch Changes

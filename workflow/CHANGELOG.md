@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.8.5
+
+### Patch Changes
+
+- 75ea561: Bump tengo-builder to 4.1.1 and block-tools to 2.16.1.
+
 ## 2.8.4
 
 ### Patch Changes

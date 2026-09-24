@@ -221,7 +221,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
   >
     <template #append>
       <PlBtnGhost
-        v-if="dataType === 'differentialAbundance'"
+        v-if="dataType === 'differentialAbundance' && !app.model.outputs.isPeptide"
         icon="dna"
         @click.stop="() => (multipleSequenceAlignmentOpen = true)"
       >

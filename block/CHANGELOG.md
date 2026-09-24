@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.8.2
+
+### Patch Changes
+
+- 555507d: Move to workflow-tengo 6.11.1
+
 ## 1.8.1
 
 ### Patch Changes

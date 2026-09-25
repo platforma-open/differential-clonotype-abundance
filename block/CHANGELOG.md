@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.9.1
+
+### Patch Changes
+
+- 42e62ef: Update SDK: PlAgDataTable no longer recreates its grid in an endless loop
+
 ## 1.9.0
 
 ### Minor Changes

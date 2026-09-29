@@ -26,6 +26,30 @@ const defaultGraphState = (): BlockData["graphState"] => ({
   currentTab: null,
 });
 
+/**
+ * Drops a chart's saved color mappings for the sources bound to its Grouping input, so they
+ * are seeded afresh.
+ *
+ * graph-maker (>= 1.9) reads the `pl7.app/graph/palette` annotation only when it creates a
+ * mapping; a mapping already saved in `dataBindAes` wins. A volcano saved before that keeps
+ * its own colors for the regulation direction and never picks up the Up/Down/NS palette the
+ * column declares. `dataBindAes` is keyed by the ids graph-maker gives the selected sources,
+ * so the entries are found through the Grouping selection rather than by column name.
+ */
+function withGroupingColorsReseeded(state: BlockData["graphState"]): BlockData["graphState"] {
+  const aes = state.dataBindAes;
+  if (aes === undefined) return state;
+  const components = state.optionsState?.components as
+    | Record<string, { selectorStates?: { selectedSource: string }[] } | undefined>
+    | undefined;
+  const grouping = new Set(
+    (components?.grouping?.selectorStates ?? []).map((s) => s.selectedSource),
+  );
+  if (grouping.size === 0) return state;
+  const kept = Object.fromEntries(Object.entries(aes).filter(([source]) => !grouping.has(source)));
+  return { ...state, dataBindAes: kept };
+}
+
 const blockDataModel = new DataModelBuilder({ kind })
   .from<BlockData>("V20260520")
   .upgradeLegacy<LegacyBlockArgs, LegacyBlockUiState>(({ args, uiState }) => ({
@@ -40,6 +64,11 @@ const blockDataModel = new DataModelBuilder({ kind })
     tableState: uiState?.tableState ?? createPlDataTableStateV2(),
     graphState: uiState?.graphState ?? defaultGraphState(),
     alignmentModel: uiState?.alignmentModel ?? {},
+  }))
+  // graph-maker 1.9: let the regulation-direction palette seed the volcano's grouping colors
+  .migrate<BlockData>("V20260929", (prev) => ({
+    ...prev,
+    graphState: withGroupingColorsReseeded(prev.graphState),
   }))
   .init(({ params }) => ({
     customBlockLabel: params?.customBlockLabel ?? "",

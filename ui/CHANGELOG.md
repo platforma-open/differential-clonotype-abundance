@@ -1,5 +1,13 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.ui
 
+## 1.14.1
+
+### Patch Changes
+
+- ce3f12a: Update graph-maker to 1.9.0. Saved volcano charts drop their grouping color mapping once, so the Up/Down/NS palette declared on the regulation direction column applies to them too.
+- Updated dependencies [ce3f12a]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.model@2.10.1
+
 ## 1.14.0
 
 ### Minor Changes

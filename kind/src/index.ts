@@ -5,9 +5,9 @@ import { name, version } from "../package.json" with { type: "json" };
 
 /**
  * This block's init-params contract — everything a user sets by hand: the
- * abundance dataset, the covariates to model, which of them is the contrast
- * factor, the groups being compared, the two significance thresholds, and the
- * subtitle they type.
+ * abundance dataset and an optional subset of it, the covariates to model,
+ * which of them is the contrast factor, the groups being compared, the two
+ * significance thresholds, and the subtitle they type.
  *
  * `defaultBlockLabel` is absent because it is not stored: the model derives it
  * from the comparison inside `.args`, so it can never disagree with the data
@@ -21,6 +21,7 @@ import { name, version } from "../package.json" with { type: "json" };
  */
 export type BlockParams = {
   countsRef?: PlRef;
+  filterRef?: PlRef;
   covariateRefs?: PlRef[];
   contrastFactor?: PlRef;
   numerators?: string[];
@@ -47,6 +48,7 @@ function parseInitializationParams(value: unknown): BlockParams {
 
   const {
     countsRef,
+    filterRef,
     covariateRefs,
     contrastFactor,
     numerators,
@@ -59,6 +61,11 @@ function parseInitializationParams(value: unknown): BlockParams {
   if (countsRef !== undefined && !isPlRef(countsRef)) {
     throw new Error(
       "'countsRef' must be a reference to an upstream column, written as { block, name }.",
+    );
+  }
+  if (filterRef !== undefined && !isPlRef(filterRef)) {
+    throw new Error(
+      "'filterRef' must be a reference to an upstream subset column, written as { block, name }.",
     );
   }
   if (covariateRefs !== undefined) {
@@ -96,6 +103,7 @@ function parseInitializationParams(value: unknown): BlockParams {
 
   return {
     countsRef,
+    filterRef,
     covariateRefs: covariateRefs as PlRef[] | undefined,
     contrastFactor,
     numerators: numerators as string[] | undefined,

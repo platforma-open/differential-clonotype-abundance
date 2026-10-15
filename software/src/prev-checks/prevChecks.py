@@ -58,8 +58,12 @@ def main():
     errorLogs = []
     # Make sure we have enough replicates for all the comparisons that are going be done
     for numerator in numerators:
+        groupSizes = metadata[args.contrast_factor].value_counts().reindex([str(numerator), str(args.denominator)], fill_value=0)
+        # A group can be left without samples, e.g. when a subset has no features in any of them
+        if int(groupSizes.min()) == 0:
+            errorLogs.append(f"Warning: It is not feasible to compare {numerator} vs {args.denominator} because one of them has no samples with counts in the selected input.")
         # Make sure at least we have a sample with enough replicates
-        if int(metadata[args.contrast_factor].value_counts()[[str(numerator), str(args.denominator)]].max()) == 1:
+        elif int(groupSizes.max()) == 1:
             errorLogs.append(f"Warning: This block requires replicates to perform the analysis. It is not feasible to compare {numerator} vs {args.denominator} because there is only one sample for each condition.")
             
     if len(errorLogs) > 0:

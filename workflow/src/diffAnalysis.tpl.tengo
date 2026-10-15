@@ -38,6 +38,8 @@ self.validateInputs({
 	numerators: "any",
 	denominator: "any",
 	contrastFactor: "any",
+	"traceSpec,omitempty": "any",
+	"subset,omitempty": "string",
 	params: {
 		"__options__,closed": "",
 		"log2FcThreshold,omitempty": "number",
@@ -108,10 +110,21 @@ self.body(func(inputs) {
 
 		traceLabel := inputs.metaInputs.customBlockLabel || inputs.metaInputs.defaultBlockLabel
 
-		trace := pSpec.makeTrace(countsSpec,
+		// A subset run roots the trace in the filter (dataset -> the block that made the subset)
+		traceSpec := is_undefined(inputs.traceSpec) ? countsSpec : inputs.traceSpec
+		trace := pSpec.makeTrace(traceSpec,
 			{type: "milaboratories.differential-analysis", importance: 30, 
 			label: traceLabel}
 		)
+
+		// Trace, plus the subset stamp on a subset run (exports cover only the subset)
+		exportSpec := func(spec) {
+			s := trace.inject(spec)
+			if !is_undefined(inputs.subset) {
+				s.domain["pl7.app/inputSubset"] = inputs.subset
+			}
+			return s
+		}
 
 		// Create PFrames for DEG, regulation direction and topTable
 		wf := pt.workflow().cpu(1).mem("2GiB")
@@ -186,7 +199,7 @@ self.body(func(inputs) {
 
 				degPframeBuilder_clonotype.add(
 					numerator,
-					trace.inject({
+					exportSpec({
 						kind: "PColumn",
 						name: "pl7.app/differentialAbundance/DCA",
 						domain: {
@@ -209,7 +222,7 @@ self.body(func(inputs) {
 
 				regDirPframeBuilder_clonotype.add(
 					numerator,
-					trace.inject({
+					exportSpec({
 						kind: "PColumn",
 						name: "pl7.app/differentialAbundance/regulationDirection",
 						domain: {
@@ -288,13 +301,13 @@ self.body(func(inputs) {
 
 		degPframeBuilder.add(
 			"Log2FC",
-			trace.inject(DegPf["log2foldchange.spec"]),
+			exportSpec(DegPf["log2foldchange.spec"]),
 			DegPf["log2foldchange.data"]
 		)
 
 		regDirPframeBuilder.add(
 			"Regulation Direction",
-			trace.inject(DegPf["regulationDirection.spec"]),
+			exportSpec(DegPf["regulationDirection.spec"]),
 			DegPf["regulationDirection.data"]
 		)
 

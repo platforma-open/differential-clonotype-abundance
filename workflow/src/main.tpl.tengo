@@ -7,6 +7,7 @@ pframes := import("@platforma-sdk/workflow-tengo:pframes")
 render := import("@platforma-sdk/workflow-tengo:render")
 ll := import("@platforma-sdk/workflow-tengo:ll")
 pt := import("@platforma-sdk/workflow-tengo:pt")
+json := import("json")
 
 pfErrorLogsConv := import(":pf-de-errors-conv")
 diffAnalysisTpl := assets.importTemplate(":diffAnalysis")
@@ -22,11 +23,16 @@ wf.prepare(func(args){
 		i = i + 1
 	}
 
-	return {
+	resolved := {
 		resolvedInput: wf.resolve(args.countsRef, { errIfMissing: true }),
 		resolvedContrastFactor: wf.resolve(args.contrastFactor),
 		metaRefs: metaRefs
 	}
+	// Optional subset column picked alongside the counts (PlDatasetSelector)
+	if !is_undefined(args.inputFilter) {
+		resolved.resolvedFilter = wf.resolve(json.decode(args.inputFilter), { errIfMissing: true })
+	}
+	return resolved
 })
 
 wf.body(func(args) {
@@ -72,7 +78,26 @@ wf.body(func(args) {
 
 	// convert PColumns to csv
 	csvCovariates := xsv.exportFrame(covariates, "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
-	csvCounts := xsv.exportFrame([allCounts], "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
+	// Optional subset: only its features enter the analysis. The trace roots in the filter
+	// so downstream labels name it.
+	filterColumn := is_undefined(args.inputFilter) ? undefined : args.resolvedFilter
+
+	// Without a subset, the plain export (unfiltered runs unchanged). With one, the counts are the
+	// filtered primary; headers are the same labels the export writes.
+	csvCounts := undefined
+	if is_undefined(filterColumn) {
+		csvCounts = xsv.exportFrame([allCounts], "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
+	} else {
+		countsTable := pframes.tableBuilder("csv")
+		countsTable.addPrimary("counts", {
+			__isPrimaryRef: "v1",
+			column: allCounts,
+			filter: filterColumn
+		})
+		countsTable.mem(defaultConvMem)
+		countsTable.cpu(defaultConvCpu)
+		csvCounts = countsTable.build()
+	}
 
 	// Restrict covariates to the samples actually present in the selected counts column.
 	sampleFilterWf := pt.workflow().cpu(defaultConvCpu).mem(defaultConvMem)
@@ -107,7 +132,7 @@ wf.body(func(args) {
 
 	// Run differential analysis template
 	// Analysis will only run if matrix is full rank (continueOrNot.txt content == "continue")
-	diffAnalysis := render.create(diffAnalysisTpl, {
+	diffAnalysisInputs := {
 		continueOrNot: continueOrNot,
 		allCounts: allCounts,
 		csvCounts: csvCounts,
@@ -127,7 +152,13 @@ wf.body(func(args) {
 			customBlockLabel: args.customBlockLabel,
 			defaultBlockLabel: args.defaultBlockLabel
 		}
-	})
+	}
+	// Only for a subset run, so a full-data run keeps exactly its previous inputs
+	if !is_undefined(filterColumn) {
+		diffAnalysisInputs.traceSpec = filterColumn.spec
+		diffAnalysisInputs.subset = args.inputFilter
+	}
+	diffAnalysis := render.create(diffAnalysisTpl, diffAnalysisInputs)
 
 	// Gather results from continueCheck template
 	degPF := diffAnalysis.output("degPF")

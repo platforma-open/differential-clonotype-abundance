@@ -1,11 +1,16 @@
 import type {
+  DatasetOption,
   InferOutputsType,
   PColumn,
   PColumnIdAndSpec,
+  PColumnSpec,
+  PObjectSpec,
   TreeNodeAccessor,
 } from "@platforma-sdk/model";
 import {
   BlockModelV3,
+  buildDatasetOptions,
+  createGlobalPObjectId,
   createPFrameForGraphs,
   createPlDataTableSheet,
   createPlDataTableStateV2,
@@ -13,6 +18,7 @@ import {
   DataModelBuilder,
   getUniquePartitionKeys,
   isPColumnSpec,
+  plRefsEqual,
 } from "@platforma-sdk/model";
 import { kind } from "@platforma-open/milaboratories.differential-clonotype-abundance.kind";
 import type { BlockArgs, BlockData, LegacyBlockArgs, LegacyBlockUiState } from "./types";
@@ -73,6 +79,7 @@ const blockDataModel = new DataModelBuilder({ kind })
   .init(({ params }) => ({
     customBlockLabel: params?.customBlockLabel ?? "",
     countsRef: params?.countsRef,
+    filterRef: params?.filterRef,
     covariateRefs: params?.covariateRefs ?? [],
     contrastFactor: params?.contrastFactor,
     denominator: params?.denominator,
@@ -109,6 +116,25 @@ function filterPCols(pCols: PColumn<TreeNodeAccessor>[]): PColumn<TreeNodeAccess
   );
 }
 
+// Key axes of the datasets whose subsets this block accepts: bulk and single-cell clonotypes, and variants.
+const DATASET_KEY_AXES: ReadonlySet<string> = new Set([
+  "pl7.app/vdj/clonotypeKey",
+  "pl7.app/vdj/scClonotypeKey",
+  "pl7.app/variantKey",
+]);
+
+// Raw clonotype abundances and raw RNA-seq counts, keyed by sample and one feature axis.
+function isCounts(spec: PObjectSpec): spec is PColumnSpec {
+  if (!isPColumnSpec(spec)) return false;
+  if (spec.axesSpec.length !== 2 || spec.axesSpec[0].name !== "pl7.app/sampleId") return false;
+  const a = spec.annotations ?? {};
+  if (a["pl7.app/isAbundance"] !== "true") return false;
+  const isClonotypeInput =
+    a["pl7.app/abundance/normalized"] === "false" && a["pl7.app/abundance/isPrimary"] === "true";
+  const isRnaInput = spec.domain?.["pl7.app/rna-seq/normalized"] === "false";
+  return isClonotypeInput || isRnaInput;
+}
+
 export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind })
 
   .args<BlockArgs>((data) => {
@@ -129,6 +155,9 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
       numerators: data.numerators,
       log2FcThreshold: data.log2FcThreshold,
       pAdjThreshold: data.pAdjThreshold,
+      ...(data.filterRef !== undefined && {
+        inputFilter: createGlobalPObjectId(data.filterRef.blockId, data.filterRef.name),
+      }),
     };
   })
 
@@ -137,6 +166,7 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
   // the comparison itself, never stored.
   .templateParams((data) => ({
     countsRef: data.countsRef,
+    filterRef: data.filterRef,
     covariateRefs: data.covariateRefs,
     contrastFactor: data.contrastFactor,
     numerators: data.numerators,
@@ -146,41 +176,31 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
     customBlockLabel: data.customBlockLabel,
   }))
 
-  .output("countsOptions", (ctx) => {
-    const allOptions = ctx.resultPool.getOptions(
-      [
-        // Clonotyoe input
-        {
-          axes: [{ name: "pl7.app/sampleId" }, {}],
-          annotations: {
-            "pl7.app/isAbundance": "true",
-            "pl7.app/abundance/normalized": "false",
-            "pl7.app/abundance/isPrimary": "true",
-          },
-        },
-        // RNA input
-        {
-          axes: [{ name: "pl7.app/sampleId" }, {}],
-          annotations: { "pl7.app/isAbundance": "true" },
-          domain: { "pl7.app/rna-seq/normalized": "false" },
-        },
-      ],
-      { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false },
-    );
+  .output("countsOptions", (ctx): DatasetOption[] => {
+    // Labels as before, with the column's own label: buildDatasetOptions takes no label options.
+    const labeled = ctx.resultPool.getOptions(isCounts, {
+      label: { includeNativeLabel: true, addLabelAsSuffix: true },
+      refsWithEnrichments: false,
+    });
 
-    // Filter out single-cell and clustered data for now
-    return allOptions.filter((option) => {
-      const pColumnSpec = ctx.resultPool.getSpecByRef(option.ref);
-      if (!pColumnSpec || !isPColumnSpec(pColumnSpec)) {
-        return true; // Keep non-p-column options
-      }
+    const options =
+      buildDatasetOptions(ctx, {
+        // Filter out single-cell and clustered data for now
+        primary: (spec) =>
+          isCounts(spec) &&
+          spec.axesSpec[1].name !== "pl7.app/vdj/scClonotypeKeyRR" &&
+          spec.axesSpec[1].name !== "pl7.app/vdj/clusterIdRR",
+        // Only subsets keyed by the clonotype or variant axis alone
+        filter: (spec) =>
+          isPColumnSpec(spec) &&
+          spec.axesSpec.length === 1 &&
+          DATASET_KEY_AXES.has(spec.axesSpec[0].name),
+        requireEnrichments: false,
+      }) ?? [];
 
-      const hasScClonotypeKey =
-        pColumnSpec.axesSpec?.length >= 2 &&
-        (pColumnSpec.axesSpec[1]?.name === "pl7.app/vdj/scClonotypeKeyRR" ||
-          pColumnSpec.axesSpec[1]?.name === "pl7.app/vdj/clusterIdRR");
-
-      return !hasScClonotypeKey;
+    return options.map((option) => {
+      const label = labeled.find((o) => plRefsEqual(o.ref, option.primary.ref, true))?.label;
+      return label === undefined ? option : { ...option, primary: { ...option.primary, label } };
     });
   })
 

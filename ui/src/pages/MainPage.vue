@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from "@milaboratories/multi-sequence-alignment";
 import { deriveDefaultLabel } from "@platforma-open/milaboratories.differential-clonotype-abundance.model";
-import type { PlSelectionModel } from "@platforma-sdk/model";
-import { PFrameImpl, plRefsEqual } from "@platforma-sdk/model";
+import type { DatasetSelection, PlSelectionModel } from "@platforma-sdk/model";
+import {
+  createDatasetSelection,
+  createPrimaryRef,
+  PFrameImpl,
+  plRefsEqual,
+} from "@platforma-sdk/model";
 import {
   PlAccordionSection,
   PlAgDataTableV2,
   PlAlert,
   PlBlockPage,
   PlBtnGhost,
+  PlDatasetSelector,
   PlDropdown,
   PlDropdownMulti,
-  PlDropdownRef,
   PlMaskIcon24,
   PlNumberField,
   PlRow,
@@ -64,6 +69,19 @@ const tableSettings = usePlDataTableSettingsV2({
 
   //   return {};
   // },
+});
+
+// The selector picks the counts, or the counts narrowed by one of their subset columns.
+const countsSelection = computed<DatasetSelection | undefined>({
+  get: () => {
+    const { countsRef, filterRef } = app.model.data;
+    if (countsRef === undefined) return undefined;
+    return createDatasetSelection(createPrimaryRef(countsRef, filterRef));
+  },
+  set: (selection) => {
+    app.model.data.countsRef = selection?.primary.column;
+    app.model.data.filterRef = selection?.primary.filter;
+  },
 });
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
@@ -250,8 +268,8 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
     </ErrorBoundary>
     <PlSlideModal v-model="settingsAreShown">
       <template #title>Settings</template>
-      <PlDropdownRef
-        v-model="app.model.data.countsRef"
+      <PlDatasetSelector
+        v-model="countsSelection"
         :options="app.model.outputs.countsOptions"
         label="Select abundance"
         :required="true"

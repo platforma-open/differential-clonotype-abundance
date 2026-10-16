@@ -94,6 +94,7 @@ self.body(func(inputs) {
 			degPF: degPF,
 			regDirPF: regDirPF,
 			topDegPF: topDegPF,
+			contrastExport: {},
 			degPF_clonotype: degPF_clonotype,
 			regDirPF_clonotype: regDirPF_clonotype
 		}

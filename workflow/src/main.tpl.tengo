@@ -155,7 +155,8 @@ wf.body(func(args) {
 	}
 	// Only for a subset run, so a full-data run keeps exactly its previous inputs
 	if !is_undefined(filterColumn) {
-		diffAnalysisInputs.traceSpec = filterColumn.spec
+		// Only the trace annotation, so unrelated filter spec edits don't re-run the sub-template
+		diffAnalysisInputs.traceSpec = { annotations: { "pl7.app/trace": filterColumn.spec.annotations["pl7.app/trace"] } }
 		diffAnalysisInputs.subset = args.inputFilter
 	}
 	diffAnalysis := render.create(diffAnalysisTpl, diffAnalysisInputs)

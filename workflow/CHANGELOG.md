@@ -1,5 +1,13 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.8.7
+
+### Patch Changes
+
+- dcb9062: Release every package through npm trusted publishing (OIDC) so each package's trusted publisher is used before it expires.
+- Updated dependencies [dcb9062]
+  - @platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software@1.16.5
+
 ## 2.8.6
 
 ### Patch Changes

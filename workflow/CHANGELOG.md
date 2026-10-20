@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.8.6
+
+### Patch Changes
+
+- e00c5df: The input checks before the analysis are cached for 24 hours, as intended; the cache time was set in milliseconds where nanoseconds are expected, so it lasted about 86 ms.
+
 ## 2.8.5
 
 ### Patch Changes

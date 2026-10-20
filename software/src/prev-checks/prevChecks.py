@@ -52,7 +52,8 @@ def main():
     numerators = json.loads(args.numerators)
 
     # Load metadata
-    metadata = pd.read_csv(args.metadata, dtype=str)
+    # Only empty cells and R's own "NA" are missing; text such as "None" or "NULL" stays a valid level, as in R
+    metadata = pd.read_csv(args.metadata, dtype=str, keep_default_na=False, na_values=["", "NA"])
     # Set sample as index
     metadata.set_index(keys="Sample", inplace=True)
     # A missing value in any design variable fails the model, so those samples are left out and reported

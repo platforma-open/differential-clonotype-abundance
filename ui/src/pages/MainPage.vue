@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from "@milaboratories/multi-sequence-alignment";
-import { deriveDefaultLabel } from "@platforma-open/milaboratories.differential-clonotype-abundance.model";
-import type { DatasetSelection, PlSelectionModel } from "@platforma-sdk/model";
 import {
-  createDatasetSelection,
-  createPrimaryRef,
-  PFrameImpl,
-  plRefsEqual,
-} from "@platforma-sdk/model";
+  deriveDefaultLabel,
+  fromCountsSelection,
+  toCountsSelection,
+} from "@platforma-open/milaboratories.differential-clonotype-abundance.model";
+import type { DatasetSelection, PlSelectionModel } from "@platforma-sdk/model";
+import { PFrameImpl } from "@platforma-sdk/model";
 import {
   PlAccordionSection,
   PlAgDataTableV2,
@@ -17,7 +16,7 @@ import {
   PlDatasetSelector,
   PlDropdown,
   PlDropdownMulti,
-  PlMaskIcon24,
+  PlIcon24,
   PlNumberField,
   PlRow,
   PlSlideModal,
@@ -73,14 +72,11 @@ const tableSettings = usePlDataTableSettingsV2({
 
 // The selector picks the counts, or the counts narrowed by one of their subset columns.
 const countsSelection = computed<DatasetSelection | undefined>({
-  get: () => {
-    const { countsRef, filterRef } = app.model.data;
-    if (countsRef === undefined) return undefined;
-    return createDatasetSelection(createPrimaryRef(countsRef, filterRef));
-  },
+  get: () => toCountsSelection(app.model.data),
   set: (selection) => {
-    app.model.data.countsRef = selection?.primary.column;
-    app.model.data.filterRef = selection?.primary.filter;
+    const { countsRef, filterRef } = fromCountsSelection(selection);
+    app.model.data.countsRef = countsRef;
+    app.model.data.filterRef = filterRef;
   },
 });
 
@@ -103,44 +99,26 @@ const dataType = computed<"rna-seq" | "differentialAbundance" | undefined>(() =>
   return undefined;
 });
 
-const covariateOptions = computed(() => {
-  return (
-    app.model.outputs.metadataOptions?.map((v) => ({
-      value: v.ref,
-      label: v.label,
-    })) ?? []
-  );
-});
+const covariateOptions = computed(() => app.model.outputs.metadataOptions ?? []);
 
 const contrastFactorOptions = computed(() => {
-  return app.model.data.covariateRefs.map((ref) => ({
-    value: ref,
-    label: covariateOptions.value.find((m) => m.value.name === ref.name)?.label ?? "",
+  return app.model.data.covariateRefs.map((id) => ({
+    value: id,
+    label: covariateOptions.value.find((m) => m.value === id)?.label ?? "",
   }));
 });
 
-// Get all possible numerator/denominator values
-const numeratorOptions = useWatchFetch(
-  () => app.model.outputs.denominatorOptions,
-  async (pframeHandle) => {
-    if (!pframeHandle) {
-      return undefined;
-    }
-    // Get ID of first pcolumn in the pframe (the only one we will access)
-    const pFrame = new PFrameImpl(pframeHandle);
-    const list = await pFrame.listColumns();
-    const id = list?.[0].columnId;
-    if (!id) {
-      return undefined;
-    }
-    // Get unique values of that first pcolumn
-    const response = await pFrame.getUniqueValues({ columnId: id, filters: [], limit: 1000000 });
-    if (!response) {
-      return undefined;
-    }
-    return [...response.values.data].map((v) => ({ value: String(v), label: String(v) }));
-  },
-);
+/**
+ * Values of the contrast factor column, while they describe the contrast factor picked now. The
+ * model output follows the pick with a lag; until it catches up the pickers show as loading.
+ * A picked value missing from them stays picked and is shown as not available.
+ */
+const numeratorOptions = computed(() => {
+  const output = app.model.outputs.contrastValueOptions;
+  const contrastFactor = app.model.data.contrastFactor;
+  if (output === undefined || contrastFactor === undefined) return undefined;
+  return output.computedFor === contrastFactor ? output.options : undefined;
+});
 
 // Only options not selected as numerators[] are accepted as denominator
 const denominatorOptions = computed(() => {
@@ -153,9 +131,8 @@ const denominatorOptions = computed(() => {
 // the legacy numerators/denominator right after they were restored.
 watch(
   () => app.model.data.contrastFactor,
-  (newRef, oldRef) => {
-    if (oldRef === undefined) return;
-    if (newRef !== undefined && plRefsEqual(oldRef, newRef)) return;
+  (_newId, oldId) => {
+    if (oldId === undefined) return;
     app.model.data.numerators = [];
     app.model.data.denominator = undefined;
   },
@@ -167,29 +144,10 @@ watch(
 watch(contrastFactorOptions, (options) => {
   const current = app.model.data.contrastFactor;
   if (current === undefined) return;
-  if (!options.some((o) => plRefsEqual(o.value, current))) {
+  if (!options.some((o) => o.value === current)) {
     app.model.data.contrastFactor = undefined;
   }
 });
-
-// Backstop: drop any numerator/denominator values that aren't in the current
-// options list. Defends against race conditions when the user changes the
-// contrast factor and picks new values before the async option fetch settles —
-// stale entries from the previous contrast factor get pruned here.
-watch(
-  () => numeratorOptions.value,
-  (options) => {
-    if (options === undefined) return; // not yet loaded
-    const valid = new Set(options.map((o) => o.value));
-    const pruned = app.model.data.numerators.filter((n) => valid.has(n));
-    if (pruned.length !== app.model.data.numerators.length) {
-      app.model.data.numerators = pruned;
-    }
-    if (app.model.data.denominator !== undefined && !valid.has(app.model.data.denominator)) {
-      app.model.data.denominator = undefined;
-    }
-  },
-);
 
 // @TODO: re-enable together with the `filtersConfig` block above. The reset
 // only makes sense when changing thresholds also changes the default filters
@@ -259,7 +217,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <PlBtnGhost @click.stop="showSettings">
         Settings
         <template #append>
-          <PlMaskIcon24 name="settings" />
+          <PlIcon24 name="settings" />
         </template>
       </PlBtnGhost>
     </template>
@@ -308,7 +266,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       />
       <PlDropdownMulti
         v-model="app.model.data.numerators"
-        :options="numeratorOptions.value"
+        :options="numeratorOptions"
         label="Numerator"
         :required="true"
       >

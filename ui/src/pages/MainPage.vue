@@ -228,6 +228,13 @@ const errorLogs = useWatchFetch(
   },
 );
 
+const droppedSamplesText = computed(() => {
+  const dropped = app.model.outputs.droppedSamples;
+  if (dropped === undefined) return undefined;
+  const list = dropped.map((d) => `${d.sample} (missing ${d.missing.join(", ")})`).join("; ");
+  return `${dropped.length} sample(s) left out of the comparison because a design value is missing: ${list}.`;
+});
+
 const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
 </script>
 
@@ -254,6 +261,9 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
     </template>
     <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>
       {{ errorLogs.value }}
+    </PlAlert>
+    <PlAlert v-if="droppedSamplesText !== undefined" type="warn" icon>
+      {{ droppedSamplesText }}
     </PlAlert>
     <ErrorBoundary>
       <PlAgDataTableV2

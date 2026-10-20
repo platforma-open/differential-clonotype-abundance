@@ -119,8 +119,12 @@ wf.body(func(args) {
 			arg("--numerators").arg(string(args.numerators)).
 			arg("--denominator").arg(denominator).
 			arg("--error_output").arg("./errorLogs.csv").
+			arg("--clean_metadata").arg("covariates-clean.csv").
+			arg("--dropped_output").arg("dropped.json").
 			saveFileContent("continueOrNot.txt").
 			saveFile("errorLogs.csv").
+			saveFile("covariates-clean.csv").
+			saveFileContent("dropped.json").
 			cache(24 * 60 * 60 * 1000).
 			run()
 
@@ -136,7 +140,8 @@ wf.body(func(args) {
 		continueOrNot: continueOrNot,
 		allCounts: allCounts,
 		csvCounts: csvCounts,
-		csvCovariates: csvCovariates,
+		// Samples with a missing design value are left out by the checks and reported in the UI
+		csvCovariates: continueCheck.getFile("covariates-clean.csv"),
 		numerators: args.numerators,
 		denominator: denominator,
 		contrastFactor: contrastFactor,
@@ -187,7 +192,8 @@ wf.body(func(args) {
 	return {
 		outputs: {
 			topTablePf: topDegPF,
-			errorLogs: pframes.exportFrame(errorLogsPf)
+			errorLogs: pframes.exportFrame(errorLogsPf),
+			droppedSamples: continueCheck.getFileContent("dropped.json")
 		},
 		exports: exports
 	}

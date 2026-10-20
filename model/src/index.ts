@@ -236,6 +236,19 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
     return ctx.createPFrame([pColumn]);
   })
 
+  // Samples the checks left out for a missing design value, named by their sample labels.
+  .output("droppedSamples", (ctx) => {
+    const dropped = ctx.outputs
+      ?.resolve("droppedSamples")
+      ?.getDataAsJson<{ sample: string; missing: string[] }[]>();
+    if (dropped === undefined || dropped.length === 0) return undefined;
+    const ref = ctx.data.countsRef;
+    const countsSpec = ref === undefined ? undefined : ctx.resultPool.getPColumnSpecByRef(ref);
+    const labels =
+      countsSpec === undefined ? undefined : ctx.resultPool.findLabelsForColumnAxis(countsSpec, 0);
+    return dropped.map((d) => ({ sample: labels?.[d.sample] ?? d.sample, missing: d.missing }));
+  })
+
   .output("errorLogs", (ctx) => {
     const pCols = ctx.outputs?.resolve("errorLogs")?.getPColumns();
     if (pCols === undefined) return undefined;

@@ -44,6 +44,8 @@ def main():
     parser.add_argument('--numerators', required=True, help='Numerators')
     parser.add_argument('--denominator', type=str, required=True, help='Denominator')
     parser.add_argument('--error_output', type=str, required=True, help='Error output directory')
+    parser.add_argument('--clean_metadata', type=str, required=True, help='Metadata without the dropped samples')
+    parser.add_argument('--dropped_output', type=str, required=True, help='Dropped samples and their missing columns, as JSON')
     args = parser.parse_args()
 
     # Convert numerators json to list
@@ -53,6 +55,17 @@ def main():
     metadata = pd.read_csv(args.metadata, dtype=str)
     # Set sample as index
     metadata.set_index(keys="Sample", inplace=True)
+    # A missing value in any design variable fails the model, so those samples are left out and reported
+    missing = metadata.isna()
+    dropped_mask = missing.any(axis=1)
+    dropped = [
+        {"sample": sample, "missing": [c for c in metadata.columns if missing.at[sample, c]]}
+        for sample in metadata.index[dropped_mask]
+    ]
+    metadata = metadata[~dropped_mask]
+    with open(args.dropped_output, "w") as f:
+        json.dump(dropped, f)
+    metadata.to_csv(args.clean_metadata)
     # Create error logs table
     df_error = pd.DataFrame(columns=["Error", "value"])
     errorLogs = []

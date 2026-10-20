@@ -2,7 +2,14 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@platforma-open/milaboratories.differential-clonotype-abundance",
+      "@platforma-open/milaboratories.differential-clonotype-abundance.model",
+      "@platforma-open/milaboratories.differential-clonotype-abundance.ui",
+      "@platforma-open/milaboratories.differential-clonotype-abundance.workflow"
+    ]
+  ],
   "linked": [],
   "access": "restricted",
   "baseBranch": "main",

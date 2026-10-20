@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from "@milaboratories/multi-sequence-alignment";
 import { deriveDefaultLabel } from "@platforma-open/milaboratories.differential-clonotype-abundance.model";
-import type { PlSelectionModel } from "@platforma-sdk/model";
-import { PFrameImpl, plRefsEqual } from "@platforma-sdk/model";
+import type { DatasetSelection, PlSelectionModel } from "@platforma-sdk/model";
+import {
+  createDatasetSelection,
+  createPrimaryRef,
+  PFrameImpl,
+  plRefsEqual,
+} from "@platforma-sdk/model";
 import {
   PlAccordionSection,
   PlAgDataTableV2,
   PlAlert,
   PlBlockPage,
   PlBtnGhost,
+  PlDatasetSelector,
   PlDropdown,
   PlDropdownMulti,
-  PlDropdownRef,
   PlMaskIcon24,
   PlNumberField,
   PlRow,
@@ -64,6 +69,19 @@ const tableSettings = usePlDataTableSettingsV2({
 
   //   return {};
   // },
+});
+
+// The selector picks the counts, or the counts narrowed by one of their subset columns.
+const countsSelection = computed<DatasetSelection | undefined>({
+  get: () => {
+    const { countsRef, filterRef } = app.model.data;
+    if (countsRef === undefined) return undefined;
+    return createDatasetSelection(createPrimaryRef(countsRef, filterRef));
+  },
+  set: (selection) => {
+    app.model.data.countsRef = selection?.primary.column;
+    app.model.data.filterRef = selection?.primary.filter;
+  },
 });
 
 const settingsAreShown = ref(app.model.outputs.datasetSpec === undefined);
@@ -210,6 +228,13 @@ const errorLogs = useWatchFetch(
   },
 );
 
+const droppedSamplesText = computed(() => {
+  const dropped = app.model.outputs.droppedSamples;
+  if (dropped === undefined) return undefined;
+  const list = dropped.map((d) => `${d.sample} (missing ${d.missing.join(", ")})`).join("; ");
+  return `${dropped.length} sample(s) left out of the comparison because a design value is missing: ${list}.`;
+});
+
 const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
 </script>
 
@@ -237,6 +262,9 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
     <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>
       {{ errorLogs.value }}
     </PlAlert>
+    <PlAlert v-if="droppedSamplesText !== undefined" type="warn" icon>
+      {{ droppedSamplesText }}
+    </PlAlert>
     <ErrorBoundary>
       <PlAgDataTableV2
         v-model="app.model.data.tableState"
@@ -250,8 +278,8 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
     </ErrorBoundary>
     <PlSlideModal v-model="settingsAreShown">
       <template #title>Settings</template>
-      <PlDropdownRef
-        v-model="app.model.data.countsRef"
+      <PlDatasetSelector
+        v-model="countsSelection"
         :options="app.model.outputs.countsOptions"
         label="Select abundance"
         :required="true"

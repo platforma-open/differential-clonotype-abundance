@@ -6,7 +6,7 @@ const parse = (params: unknown) => kind.parseInitializationParams(params);
 const REF = { __isRef: true as const, blockId: "b1", name: "pf/abundance" };
 const OTHER_REF = { __isRef: true as const, blockId: "b1", name: "pf/metadata/tissue" };
 
-describe.each(["countsRef", "contrastFactor"] as const)("%s", (field) => {
+describe.each(["countsRef", "filterRef", "contrastFactor"] as const)("%s", (field) => {
   it("accepts a PlRef", () => {
     expect(parse({ [field]: REF })).toEqual({ [field]: REF });
   });

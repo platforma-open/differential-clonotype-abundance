@@ -44,22 +44,40 @@ def main():
     parser.add_argument('--numerators', required=True, help='Numerators')
     parser.add_argument('--denominator', type=str, required=True, help='Denominator')
     parser.add_argument('--error_output', type=str, required=True, help='Error output directory')
+    parser.add_argument('--clean_metadata', type=str, required=True, help='Metadata without the dropped samples')
+    parser.add_argument('--dropped_output', type=str, required=True, help='Dropped samples and their missing columns, as JSON')
     args = parser.parse_args()
 
     # Convert numerators json to list
     numerators = json.loads(args.numerators)
 
     # Load metadata
-    metadata = pd.read_csv(args.metadata, dtype=str)
+    # Only empty cells and R's own "NA" are missing; text such as "None" or "NULL" stays a valid level, as in R
+    metadata = pd.read_csv(args.metadata, dtype=str, keep_default_na=False, na_values=["", "NA"])
     # Set sample as index
     metadata.set_index(keys="Sample", inplace=True)
+    # A missing value in any design variable fails the model, so those samples are left out and reported
+    missing = metadata.isna()
+    dropped_mask = missing.any(axis=1)
+    dropped = [
+        {"sample": sample, "missing": [c for c in metadata.columns if missing.at[sample, c]]}
+        for sample in metadata.index[dropped_mask]
+    ]
+    metadata = metadata[~dropped_mask]
+    with open(args.dropped_output, "w") as f:
+        json.dump(dropped, f)
+    metadata.to_csv(args.clean_metadata)
     # Create error logs table
     df_error = pd.DataFrame(columns=["Error", "value"])
     errorLogs = []
     # Make sure we have enough replicates for all the comparisons that are going be done
     for numerator in numerators:
+        groupSizes = metadata[args.contrast_factor].value_counts().reindex([str(numerator), str(args.denominator)], fill_value=0)
+        # A group can be left without samples, e.g. when a subset has no features in any of them
+        if int(groupSizes.min()) == 0:
+            errorLogs.append(f"Warning: It is not feasible to compare {numerator} vs {args.denominator} because one of them has no samples with counts in the selected input.")
         # Make sure at least we have a sample with enough replicates
-        if int(metadata[args.contrast_factor].value_counts()[[str(numerator), str(args.denominator)]].max()) == 1:
+        elif int(groupSizes.max()) == 1:
             errorLogs.append(f"Warning: This block requires replicates to perform the analysis. It is not feasible to compare {numerator} vs {args.denominator} because there is only one sample for each condition.")
             
     if len(errorLogs) > 0:

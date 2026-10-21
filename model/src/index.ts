@@ -7,7 +7,6 @@ import type {
 } from "@platforma-sdk/model";
 import {
   BlockModelV3,
-  blockDependencies,
   columnValueLabel,
   createGlobalPObjectId,
   createPFrameForGraphs,
@@ -283,8 +282,6 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
 
     return createPFrameForGraphs(ctx, toPColumns([...topTable.getColumns(), ...featureColumns]));
   })
-
-  .plugin(blockDependencies)
 
   .title(() => "Differential abundance")
 

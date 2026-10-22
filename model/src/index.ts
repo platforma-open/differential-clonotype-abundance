@@ -7,7 +7,7 @@ import type {
 import {
   BlockModelV3,
   columnValueLabel,
-  createColumnValuesSource,
+  createColumnValueOptions,
   createPFrameForGraphs,
   createPlDataTableSheet,
   createPlDataTableV3,
@@ -120,12 +120,12 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
     return ref === undefined ? undefined : findColumn(ctx, ref)?.getSpec();
   })
 
-  // Where the numerator and denominator pickers read the values of the contrast factor column
-  // from. `undefined` until a contrast factor is picked.
+  // The values of the contrast factor column, for the numerator and denominator pickers.
+  // `undefined` until a contrast factor is picked.
   .output("contrastValues", (ctx) =>
     ctx.data.contrastFactor === undefined
       ? undefined
-      : createColumnValuesSource(ctx, ctx.data.contrastFactor),
+      : createColumnValueOptions({ valueColumn: ctx.data.contrastFactor }),
   )
 
   .output("errorLogs", (ctx) => {

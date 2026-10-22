@@ -9,13 +9,15 @@ import {
   PlAlert,
   PlBlockPage,
   PlBtnGhost,
+  PlColumnValueDropdown,
+  PlColumnValueDropdownMulti,
   PlDropdown,
   PlDropdownMulti,
   PlMaskIcon24,
   PlNumberField,
   PlRow,
   PlSlideModal,
-  useColumnValueOptions,
+  usePlColumnValueSettings,
   usePlDataTableSettingsV2,
   useWatchFetch,
 } from "@platforma-sdk/ui-vue";
@@ -95,28 +97,12 @@ const contrastFactorOptions = computed(() => {
 });
 
 /**
- * Values of the contrast factor column picked now. While they load the pickers show as loading.
- * A picked value missing from them stays picked and is shown as not available.
+ * What the numerator and denominator pickers offer: the values of the contrast factor column
+ * picked now.
  */
-const contrastValues = useColumnValueOptions({
+const contrastValues = usePlColumnValueSettings({
   source: () => app.model.outputs.contrastValues,
-  column: () => app.model.data.contrastFactor,
-});
-
-const numeratorOptions = computed(() => {
-  const state = contrastValues.value;
-  if (state === undefined || state.type === "loading") return undefined;
-  return state.type === "read" ? state.options : [];
-});
-
-const contrastValuesError = computed(() => {
-  const state = contrastValues.value;
-  return state?.type === "failed" ? state.message : undefined;
-});
-
-// Only options not selected as numerators[] are accepted as denominator
-const denominatorOptions = computed(() => {
-  return numeratorOptions.value?.filter((op) => !app.model.data.numerators.includes(op.value));
+  valueColumn: () => app.model.data.contrastFactor,
 });
 
 // Reset numerator + denominator when the user changes the contrast factor.
@@ -238,10 +224,9 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
         label="Contrast factor"
         :required="true"
       />
-      <PlDropdownMulti
+      <PlColumnValueDropdownMulti
         v-model="app.model.data.numerators"
-        :options="numeratorOptions"
-        :error="contrastValuesError"
+        :settings="contrastValues"
         label="Numerator"
         :required="true"
       >
@@ -249,11 +234,12 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
           Calculate a contrast per each one of the selected Numerators versus the selected
           control/baseline
         </template>
-      </PlDropdownMulti>
-      <PlDropdown
+      </PlColumnValueDropdownMulti>
+      <!-- A value picked as a numerator is not offered as the denominator -->
+      <PlColumnValueDropdown
         v-model="app.model.data.denominator"
-        :options="denominatorOptions"
-        :error="contrastValuesError"
+        :settings="contrastValues"
+        :exclude="app.model.data.numerators"
         label="Denominator"
         :required="true"
       />

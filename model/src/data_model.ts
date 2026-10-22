@@ -115,8 +115,8 @@ function plRefToColumnId(ref: PlRef): ColumnUniversalId {
 
 /**
  * A compared group as the column value id of the contrast factor column. A group already stored
- * as a column value id is kept. A plain value keeps its stored text: whether the column holds
- * numbers is not known while data is migrated, so a group of a numeric column stays text.
+ * as a column value id is kept. A plain value becomes the id of its text, the form every column
+ * value id carries: text stays as stored, a number becomes its decimal text.
  */
 function toContrastValueId(
   column: ColumnUniversalId | undefined,
@@ -124,7 +124,7 @@ function toContrastValueId(
 ): ColumnValueId | undefined {
   if (isColumnValueId(picked)) return picked;
   if (column === undefined || !isPlainValue(picked)) return undefined;
-  return createColumnValueId({ column, value: picked });
+  return createColumnValueId({ column, value: String(picked) });
 }
 
 function isPlainValue(value: unknown): value is string | number {

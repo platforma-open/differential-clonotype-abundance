@@ -26,14 +26,17 @@ export type BlockData = {
   alignmentModel: PlMultiSequenceAlignmentModel;
 };
 
-/** Projected args consumed by the workflow. */
+/**
+ * Projected args consumed by the workflow. They exist for an unconfigured block too, so the
+ * dataset, contrast factor and denominator may be absent; such a block is not allowed to run.
+ */
 export type BlockArgs = {
   defaultBlockLabel: string;
   customBlockLabel: string;
-  countsRef: ColumnUniversalId;
+  countsRef?: ColumnUniversalId;
   covariateRefs: ColumnUniversalId[];
-  contrastFactor: ColumnUniversalId;
-  denominator: ColumnValueId;
+  contrastFactor?: ColumnUniversalId;
+  denominator?: ColumnValueId;
   numerators: ColumnValueId[];
   log2FcThreshold: number;
   pAdjThreshold: number;

@@ -1,7 +1,13 @@
-import type { InferOutputsType, PColumnIdAndSpec, StringMatcher } from "@platforma-sdk/model";
+import type {
+  InferOutputsType,
+  PColumnIdAndSpec,
+  ArgsIssue,
+  StringMatcher,
+} from "@platforma-sdk/model";
 import {
   BlockModelV3,
   columnValueLabel,
+  createColumnValuesSource,
   createPFrameForGraphs,
   createPlDataTableSheet,
   createPlDataTableV3,
@@ -19,13 +25,11 @@ import {
   getOutputColumns,
   toPColumns,
 } from "./columns";
-import { getContrastValueOptions } from "./contrast_values";
 import { blockDataModel } from "./data_model";
 import type { BlockArgs, BlockData } from "./types";
 
 export * from "./types";
 export type { ColumnPickerOption } from "./columns";
-export type { ContrastValueOptions } from "./contrast_values";
 export type * from "@platforma-open/milaboratories.differential-clonotype-abundance.kind";
 
 export function deriveDefaultLabel(data: BlockData): string {
@@ -55,25 +59,28 @@ const GRAPH_COLUMN_NAMES: StringMatcher[] = [
 
 export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind })
 
-  .args<BlockArgs>((data) => {
-    if (data.countsRef === undefined) throw new Error("Dataset is required");
-    if (data.contrastFactor === undefined) throw new Error("Contrast factor is required");
-    if (data.numerators.length === 0) throw new Error("At least one numerator is required");
-    if (data.denominator === undefined) throw new Error("Denominator is required");
-    if (data.log2FcThreshold === undefined) throw new Error("Log2(FC) threshold is required");
-    if (data.pAdjThreshold === undefined) throw new Error("Adjusted p-value threshold is required");
+  .args<BlockArgs>((data) => ({
+    defaultBlockLabel: deriveDefaultLabel(data),
+    customBlockLabel: data.customBlockLabel,
+    countsRef: data.countsRef,
+    covariateRefs: data.covariateRefs,
+    contrastFactor: data.contrastFactor,
+    denominator: data.denominator,
+    numerators: data.numerators,
+    log2FcThreshold: data.log2FcThreshold,
+    pAdjThreshold: data.pAdjThreshold,
+  }))
 
-    return {
-      defaultBlockLabel: deriveDefaultLabel(data),
-      customBlockLabel: data.customBlockLabel,
-      countsRef: data.countsRef,
-      covariateRefs: data.covariateRefs,
-      contrastFactor: data.contrastFactor,
-      denominator: data.denominator,
-      numerators: data.numerators,
-      log2FcThreshold: data.log2FcThreshold,
-      pAdjThreshold: data.pAdjThreshold,
-    };
+  .argsIssues(({ args }) => {
+    const issues: ArgsIssue[] = [];
+    const error = (message: string) => issues.push({ severity: "error", message });
+    if (args.countsRef === undefined) error("Dataset is required");
+    if (args.contrastFactor === undefined) error("Contrast factor is required");
+    if (args.numerators.length === 0) error("At least one numerator is required");
+    if (args.denominator === undefined) error("Denominator is required");
+    if (args.log2FcThreshold === undefined) error("Log2(FC) threshold is required");
+    if (args.pAdjThreshold === undefined) error("Adjusted p-value threshold is required");
+    return issues;
   })
 
   // Inverse of the kind's init-params contract: every field a user sets by
@@ -113,8 +120,13 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
     return ref === undefined ? undefined : findColumn(ctx, ref)?.getSpec();
   })
 
-  // Options of the numerator and denominator pickers: the values of the contrast factor column.
-  .output("contrastValueOptions", (ctx) => getContrastValueOptions(ctx, ctx.data.contrastFactor))
+  // Where the numerator and denominator pickers read the values of the contrast factor column
+  // from. `undefined` until a contrast factor is picked.
+  .output("contrastValues", (ctx) =>
+    ctx.data.contrastFactor === undefined
+      ? undefined
+      : createColumnValuesSource(ctx, ctx.data.contrastFactor),
+  )
 
   .output("errorLogs", (ctx) => {
     const errorLogs = getOutputColumns(ctx, ctx.outputs?.resolve("errorLogs"));

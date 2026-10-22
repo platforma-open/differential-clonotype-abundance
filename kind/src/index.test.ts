@@ -1,19 +1,26 @@
+import { createColumnValueId, createGlobalPObjectId } from "@platforma-sdk/model";
 import { describe, expect, it } from "vitest";
 import { kind } from "./index";
 
 const parse = (params: unknown) => kind.parseInitializationParams(params);
 
 const REF = { __isRef: true as const, blockId: "b1", name: "pf/abundance" };
-const OTHER_REF = { __isRef: true as const, blockId: "b1", name: "pf/metadata/tissue" };
+
+const ABUNDANCE = createGlobalPObjectId("b1", "pf/abundance");
+const TISSUE = createGlobalPObjectId("b1", "pf/metadata/tissue");
+const TREATED = createColumnValueId({ column: TISSUE, value: "treated" });
+const RELAPSED = createColumnValueId({ column: TISSUE, value: "relapsed" });
+const CONTROL = createColumnValueId({ column: TISSUE, value: "control" });
 
 describe.each(["countsRef", "contrastFactor"] as const)("%s", (field) => {
-  it("accepts a PlRef", () => {
-    expect(parse({ [field]: REF })).toEqual({ [field]: REF });
+  it("accepts a result-pool column id", () => {
+    expect(parse({ [field]: ABUNDANCE })).toEqual({ [field]: ABUNDANCE });
   });
 
   it.each([
-    ["an object missing the marker", { blockId: "b1", name: "pf/abundance" }],
-    ["a serialized ref rather than the object", JSON.stringify(REF)],
+    ["a ref object, which earlier versions of the kind took", REF],
+    ["a string that is not a column id", "pf/abundance"],
+    ["a column value id rather than a column", createColumnValueId({ column: TISSUE, value: "x" })],
     ["a number", 42],
     ["null", null],
   ])("rejects %s", (_label, bad) => {
@@ -24,22 +31,28 @@ describe.each(["countsRef", "contrastFactor"] as const)("%s", (field) => {
 describe("covariateRefs", () => {
   it.each([
     ["an empty array, as an unconfigured block has", []],
-    ["several refs", [REF, OTHER_REF]],
+    ["several column ids", [ABUNDANCE, TISSUE]],
   ])("accepts %s", (_label, covariateRefs) => {
     expect(parse({ covariateRefs })).toEqual({ covariateRefs });
   });
 
   it.each([
-    ["a bare ref", REF],
-    ["an array holding a non-ref", [REF, "pf/metadata/tissue"]],
+    ["a bare column id", TISSUE],
+    ["ref objects, which earlier versions of the kind took", [REF]],
+    ["an array holding a string that is not a column id", [TISSUE, "pf/metadata/tissue"]],
   ])("rejects %s", (_label, covariateRefs) => {
     expect(() => parse({ covariateRefs })).toThrow("'covariateRefs' must be an array");
   });
 });
 
 describe("the compared groups", () => {
-  it("accepts the contrast factor's own values", () => {
-    const params = { numerators: ["treated", "relapsed"], denominator: "control" };
+  it("accepts values of the contrast factor column", () => {
+    const params = { numerators: [TREATED, RELAPSED], denominator: CONTROL };
+    expect(parse(params)).toEqual(params);
+  });
+
+  it("accepts a value of a number contrast factor column, which is picked as its text", () => {
+    const params = { denominator: createColumnValueId({ column: TISSUE, value: "2" }) };
     expect(parse(params)).toEqual(params);
   });
 
@@ -48,14 +61,24 @@ describe("the compared groups", () => {
   });
 
   it.each([
-    ["a bare string", "treated"],
+    ["a bare column value id", TREATED],
     ["an array of numbers", [1, 2]],
+    ["plain values, which name no producing block", ["treated", "relapsed"]],
+    ["a mix of column value ids and plain values", [TREATED, "relapsed"]],
   ])("rejects numerators as %s", (_label, numerators) => {
     expect(() => parse({ numerators })).toThrow("'numerators' must be an array");
   });
 
-  it("rejects a non-string denominator", () => {
-    expect(() => parse({ denominator: 0 })).toThrow("'denominator' must be");
+  it.each([
+    ["a number", 0],
+    ["a plain value, which names no producing block", "control"],
+    ["a column id rather than a value of it", TISSUE],
+    [
+      "a column value id holding a number rather than text",
+      JSON.stringify({ __isColumnValue: true, column: TISSUE, value: 2 }),
+    ],
+  ])("rejects a denominator as %s", (_label, denominator) => {
+    expect(() => parse({ denominator })).toThrow("'denominator' must be");
   });
 });
 
@@ -90,11 +113,11 @@ describe("the params envelope", () => {
 
   it("accepts a fully configured comparison", () => {
     const params = {
-      countsRef: REF,
-      covariateRefs: [OTHER_REF],
-      contrastFactor: OTHER_REF,
-      numerators: ["treated"],
-      denominator: "control",
+      countsRef: ABUNDANCE,
+      covariateRefs: [TISSUE],
+      contrastFactor: TISSUE,
+      numerators: [TREATED],
+      denominator: CONTROL,
       log2FcThreshold: 1,
       pAdjThreshold: 0.05,
       customBlockLabel: "treated vs control",

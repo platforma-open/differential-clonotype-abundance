@@ -7,36 +7,37 @@ pframes := import("@platforma-sdk/workflow-tengo:pframes")
 render := import("@platforma-sdk/workflow-tengo:render")
 ll := import("@platforma-sdk/workflow-tengo:ll")
 pt := import("@platforma-sdk/workflow-tengo:pt")
+columnValue := import("@platforma-sdk/workflow-tengo:workflow.column-value")
 
 pfErrorLogsConv := import(":pf-de-errors-conv")
 diffAnalysisTpl := assets.importTemplate(":diffAnalysis")
 
+// The abundance, covariate and contrast factor columns arrive as result-pool column ids.
 wf.prepare(func(args){
-
-	// below solution not working currently
-	metaRefs := {}
-
-	i := 0
-	for metaRef in args.covariateRefs {
-		metaRefs["metaRef" + i ] = wf.resolve(metaRef, { errIfMissing: true })
-		i = i + 1
+	bundleBuilder := wf.createPBundleBuilder()
+	bundleBuilder.addSingle(args.countsRef)
+	bundleBuilder.addSingle(args.contrastFactor)
+	for covariateRef in args.covariateRefs {
+		bundleBuilder.addSingle(covariateRef)
 	}
 
 	return {
-		resolvedInput: wf.resolve(args.countsRef, { errIfMissing: true }),
-		resolvedContrastFactor: wf.resolve(args.contrastFactor),
-		metaRefs: metaRefs
+		columns: bundleBuilder.build()
 	}
 })
 
 wf.body(func(args) {
 	blockId := wf.blockId().getDataAsJson()
 
-	allCounts := args.resolvedInput
+	columns := args.columns
+	allCounts := columns.getColumn(args.countsRef)
 	countsSpec := allCounts.spec
 
-	contrastFactor := args.resolvedContrastFactor
-	denominator := string(args.denominator)
+	contrastFactor := columns.getColumn(args.contrastFactor)
+	// The compared groups arrive as column value ids of the contrast factor column; the analysis
+	// works with the plain values they carry.
+	numerators := columnValue.valuesOf(args.numerators)
+	denominator := string(columnValue.valueOf(args.denominator))
 	log2FcThreshold := args.log2FcThreshold
 	pAdjThreshold := args.pAdjThreshold
 
@@ -66,8 +67,8 @@ wf.body(func(args) {
 	defaultConvCpu := 1
 
 	covariates := []
-	for _, v in args.metaRefs {
-		covariates = append(covariates, v)
+	for covariateRef in args.covariateRefs {
+		covariates = append(covariates, columns.getColumn(covariateRef))
 	}
 
 	// convert PColumns to csv
@@ -91,7 +92,7 @@ wf.body(func(args) {
 			arg("--metadata").arg("covariates.csv").
 			addFile("covariates.csv", csvCovariates).
 			arg("--contrast_factor").arg(contrastFactor.spec.annotations["pl7.app/label"]).
-			arg("--numerators").arg(string(args.numerators)).
+			arg("--numerators").arg(string(numerators)).
 			arg("--denominator").arg(denominator).
 			arg("--error_output").arg("./errorLogs.csv").
 			saveFileContent("continueOrNot.txt").
@@ -112,7 +113,7 @@ wf.body(func(args) {
 		allCounts: allCounts,
 		csvCounts: csvCounts,
 		csvCovariates: csvCovariates,
-		numerators: args.numerators,
+		numerators: numerators,
 		denominator: denominator,
 		contrastFactor: contrastFactor,
 		params: {

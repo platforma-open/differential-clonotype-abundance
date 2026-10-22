@@ -1,135 +1,86 @@
 import type {
   InferOutputsType,
-  PColumn,
   PColumnIdAndSpec,
-  TreeNodeAccessor,
+  ArgsIssue,
+  StringMatcher,
 } from "@platforma-sdk/model";
 import {
   BlockModelV3,
+  columnValueLabel,
+  createColumnValueOptions,
   createPFrameForGraphs,
   createPlDataTableSheet,
-  createPlDataTableStateV2,
-  createPlDataTableV2,
-  DataModelBuilder,
+  createPlDataTableV3,
   getUniquePartitionKeys,
-  isPColumnSpec,
+  hasReachableData,
+  isDataColumn,
+  TreeNodeAccessor,
 } from "@platforma-sdk/model";
 import { kind } from "@platforma-open/milaboratories.differential-clonotype-abundance.kind";
-import type { BlockArgs, BlockData, LegacyBlockArgs, LegacyBlockUiState } from "./types";
+import {
+  findColumn,
+  getCountsOptions,
+  getFeatureColumns,
+  getMetadataOptions,
+  getOutputColumns,
+  toPColumns,
+} from "./columns";
+import { blockDataModel } from "./data_model";
+import type { BlockArgs, BlockData } from "./types";
 
 export * from "./types";
+export type { ColumnPickerOption } from "./columns";
 export type * from "@platforma-open/milaboratories.differential-clonotype-abundance.kind";
-
-const defaultGraphState = (): BlockData["graphState"] => ({
-  title: "Differential abundance",
-  template: "dots",
-  currentTab: null,
-});
-
-/**
- * Drops a chart's saved color mappings for the sources bound to its Grouping input, so they
- * are seeded afresh.
- *
- * graph-maker (>= 1.9) reads the `pl7.app/graph/palette` annotation only when it creates a
- * mapping; a mapping already saved in `dataBindAes` wins. A volcano saved before that keeps
- * its own colors for the regulation direction and never picks up the Up/Down/NS palette the
- * column declares. `dataBindAes` is keyed by the ids graph-maker gives the selected sources,
- * so the entries are found through the Grouping selection rather than by column name.
- */
-function withGroupingColorsReseeded(state: BlockData["graphState"]): BlockData["graphState"] {
-  const aes = state.dataBindAes;
-  if (aes === undefined) return state;
-  const components = state.optionsState?.components as
-    | Record<string, { selectorStates?: { selectedSource: string }[] } | undefined>
-    | undefined;
-  const grouping = new Set(
-    (components?.grouping?.selectorStates ?? []).map((s) => s.selectedSource),
-  );
-  if (grouping.size === 0) return state;
-  const kept = Object.fromEntries(Object.entries(aes).filter(([source]) => !grouping.has(source)));
-  return { ...state, dataBindAes: kept };
-}
-
-const blockDataModel = new DataModelBuilder({ kind })
-  .from<BlockData>("V20260520")
-  .upgradeLegacy<LegacyBlockArgs, LegacyBlockUiState>(({ args, uiState }) => ({
-    customBlockLabel: args?.customBlockLabel ?? "",
-    countsRef: args?.countsRef,
-    covariateRefs: args?.covariateRefs ?? [],
-    contrastFactor: args?.contrastFactor,
-    denominator: args?.denominator,
-    numerators: args?.numerators ?? [],
-    log2FcThreshold: args?.log2FcThreshold ?? 1,
-    pAdjThreshold: args?.pAdjThreshold ?? 0.05,
-    tableState: uiState?.tableState ?? createPlDataTableStateV2(),
-    graphState: uiState?.graphState ?? defaultGraphState(),
-    alignmentModel: uiState?.alignmentModel ?? {},
-  }))
-  // graph-maker 1.9: let the regulation-direction palette seed the volcano's grouping colors
-  .migrate<BlockData>("V20260929", (prev) => ({
-    ...prev,
-    graphState: withGroupingColorsReseeded(prev.graphState),
-  }))
-  .init(({ params }) => ({
-    customBlockLabel: params?.customBlockLabel ?? "",
-    countsRef: params?.countsRef,
-    covariateRefs: params?.covariateRefs ?? [],
-    contrastFactor: params?.contrastFactor,
-    denominator: params?.denominator,
-    numerators: params?.numerators ?? [],
-    log2FcThreshold: params?.log2FcThreshold ?? 1,
-    pAdjThreshold: params?.pAdjThreshold ?? 0.05,
-    tableState: createPlDataTableStateV2(),
-    graphState: defaultGraphState(),
-    alignmentModel: {},
-  }));
 
 export function deriveDefaultLabel(data: BlockData): string {
   if (data.denominator && data.numerators.length > 0) {
-    const numeratorsPart = data.numerators.join(", ");
-    return `${numeratorsPart} vs ${data.denominator} (log2FC: ${data.log2FcThreshold}, pAdj: ${data.pAdjThreshold})`;
+    const numeratorsPart = data.numerators.map(columnValueLabel).join(", ");
+    const denominatorPart = columnValueLabel(data.denominator);
+    return `${numeratorsPart} vs ${denominatorPart} (log2FC: ${data.log2FcThreshold}, pAdj: ${data.pAdjThreshold})`;
   }
   return "Configure comparison";
 }
 
-// get main Pcols for plot and tables
-function filterPCols(pCols: PColumn<TreeNodeAccessor>[]): PColumn<TreeNodeAccessor>[] {
-  // Allow only log2 FC and -log10 Padjust as options for volcano axis
-  return pCols.filter(
-    (col) =>
-      col.spec.name === "pl7.app/differentialAbundance/log2foldchange" ||
-      col.spec.name === "pl7.app/differentialAbundance/minlog10padj" ||
-      col.spec.name === "pl7.app/differentialAbundance/regulationDirection" ||
-      col.spec.name === "pl7.app/differentialAbundance/contrastGroup" ||
-      col.spec.name === "pl7.app/rna-seq/log2foldchange" ||
-      col.spec.name === "pl7.app/rna-seq/minlog10padj" ||
-      col.spec.name === "pl7.app/rna-seq/regulationDirection" ||
-      col.spec.name === "pl7.app/rna-seq/genesymbol" ||
-      col.spec.name === "pl7.app/rna-seq/contrastGroup",
-  );
-}
+/**
+ * Names of the result columns the volcano and its pickers work with: fold change, significance,
+ * regulation direction, the contrast and, for genes, their symbols.
+ */
+const GRAPH_COLUMN_NAMES: StringMatcher[] = [
+  "pl7.app/differentialAbundance/log2foldchange",
+  "pl7.app/differentialAbundance/minlog10padj",
+  "pl7.app/differentialAbundance/regulationDirection",
+  "pl7.app/differentialAbundance/contrastGroup",
+  "pl7.app/rna-seq/log2foldchange",
+  "pl7.app/rna-seq/minlog10padj",
+  "pl7.app/rna-seq/regulationDirection",
+  "pl7.app/rna-seq/genesymbol",
+  "pl7.app/rna-seq/contrastGroup",
+].map((value): StringMatcher => ({ type: "exact", value }));
 
 export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind })
 
-  .args<BlockArgs>((data) => {
-    if (data.countsRef === undefined) throw new Error("Dataset is required");
-    if (data.contrastFactor === undefined) throw new Error("Contrast factor is required");
-    if (data.numerators.length === 0) throw new Error("At least one numerator is required");
-    if (data.denominator === undefined) throw new Error("Denominator is required");
-    if (data.log2FcThreshold === undefined) throw new Error("Log2(FC) threshold is required");
-    if (data.pAdjThreshold === undefined) throw new Error("Adjusted p-value threshold is required");
+  .args<BlockArgs>((data) => ({
+    defaultBlockLabel: deriveDefaultLabel(data),
+    customBlockLabel: data.customBlockLabel,
+    countsRef: data.countsRef,
+    covariateRefs: data.covariateRefs,
+    contrastFactor: data.contrastFactor,
+    denominator: data.denominator,
+    numerators: data.numerators,
+    log2FcThreshold: data.log2FcThreshold,
+    pAdjThreshold: data.pAdjThreshold,
+  }))
 
-    return {
-      defaultBlockLabel: deriveDefaultLabel(data),
-      customBlockLabel: data.customBlockLabel,
-      countsRef: data.countsRef,
-      covariateRefs: data.covariateRefs,
-      contrastFactor: data.contrastFactor,
-      denominator: data.denominator,
-      numerators: data.numerators,
-      log2FcThreshold: data.log2FcThreshold,
-      pAdjThreshold: data.pAdjThreshold,
-    };
+  .argsIssues(({ args }) => {
+    const issues: ArgsIssue[] = [];
+    const error = (message: string) => issues.push({ severity: "error", message });
+    if (args.countsRef === undefined) error("Dataset is required");
+    if (args.contrastFactor === undefined) error("Contrast factor is required");
+    if (args.numerators.length === 0) error("At least one numerator is required");
+    if (args.denominator === undefined) error("Denominator is required");
+    if (args.log2FcThreshold === undefined) error("Log2(FC) threshold is required");
+    if (args.pAdjThreshold === undefined) error("Adjusted p-value threshold is required");
+    return issues;
   })
 
   // Inverse of the kind's init-params contract: every field a user sets by
@@ -146,52 +97,14 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
     customBlockLabel: data.customBlockLabel,
   }))
 
-  .output("countsOptions", (ctx) => {
-    const allOptions = ctx.resultPool.getOptions(
-      [
-        // Clonotyoe input
-        {
-          axes: [{ name: "pl7.app/sampleId" }, {}],
-          annotations: {
-            "pl7.app/isAbundance": "true",
-            "pl7.app/abundance/normalized": "false",
-            "pl7.app/abundance/isPrimary": "true",
-          },
-        },
-        // RNA input
-        {
-          axes: [{ name: "pl7.app/sampleId" }, {}],
-          annotations: { "pl7.app/isAbundance": "true" },
-          domain: { "pl7.app/rna-seq/normalized": "false" },
-        },
-      ],
-      { label: { includeNativeLabel: true, addLabelAsSuffix: true }, refsWithEnrichments: false },
-    );
+  .output("countsOptions", () => getCountsOptions())
 
-    // Filter out single-cell and clustered data for now
-    return allOptions.filter((option) => {
-      const pColumnSpec = ctx.resultPool.getSpecByRef(option.ref);
-      if (!pColumnSpec || !isPColumnSpec(pColumnSpec)) {
-        return true; // Keep non-p-column options
-      }
-
-      const hasScClonotypeKey =
-        pColumnSpec.axesSpec?.length >= 2 &&
-        (pColumnSpec.axesSpec[1]?.name === "pl7.app/vdj/scClonotypeKeyRR" ||
-          pColumnSpec.axesSpec[1]?.name === "pl7.app/vdj/clusterIdRR");
-
-      return !hasScClonotypeKey;
-    });
-  })
-
-  .output("metadataOptions", (ctx) =>
-    ctx.resultPool.getOptions((spec) => isPColumnSpec(spec) && spec.name === "pl7.app/metadata"),
-  )
+  .output("metadataOptions", () => getMetadataOptions())
 
   .output("isPeptide", (ctx): boolean => {
     const ref = ctx.data.countsRef;
     if (ref === undefined) return false;
-    const keyAxis = ctx.resultPool.getPColumnSpecByRef(ref)?.axesSpec[1];
+    const keyAxis = findColumn(ref)?.getSpec().axesSpec[1];
     if (keyAxis?.name !== "pl7.app/variantKey") return false;
     const domain = keyAxis.domain ?? {};
     const declared = domain["pl7.app/modality"];
@@ -203,90 +116,78 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
   })
 
   .output("datasetSpec", (ctx) => {
-    if (ctx.data.countsRef) return ctx.resultPool.getSpecByRef(ctx.data.countsRef);
-    else return undefined;
+    const ref = ctx.data.countsRef;
+    return ref === undefined ? undefined : findColumn(ref)?.getSpec();
   })
 
-  .output("denominatorOptions", (ctx) => {
-    if (!ctx.data.contrastFactor) return undefined;
-
-    const pColumn = ctx.resultPool.getPColumnByRef(ctx.data.contrastFactor);
-    if (!pColumn) return undefined;
-
-    return ctx.createPFrame([pColumn]);
-  })
+  // The values of the contrast factor column, for the numerator and denominator pickers.
+  // `undefined` until a contrast factor is picked.
+  .output("contrastValues", (ctx) =>
+    ctx.data.contrastFactor === undefined
+      ? undefined
+      : createColumnValueOptions({ valueColumn: ctx.data.contrastFactor }),
+  )
 
   .output("errorLogs", (ctx) => {
-    const pCols = ctx.outputs?.resolve("errorLogs")?.getPColumns();
-    if (pCols === undefined) return undefined;
-    return ctx.createPFrame(pCols);
+    const errorLogs = getOutputColumns(ctx.outputs?.resolve("errorLogs"));
+    if (errorLogs === undefined) return undefined;
+    return ctx.createPFrame(errorLogs.getColumnIds());
   })
 
   // Returns a map of results
   .outputWithStatus("pt", (ctx) => {
-    const pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
-    if (pCols === undefined) return undefined;
-    return createPlDataTableV2(ctx, pCols, ctx.data.tableState);
+    const topTable = getOutputColumns(ctx.outputs?.resolve("topTablePf"));
+    if (topTable === undefined) return undefined;
+    return createPlDataTableV3(ctx, {
+      // The block's own result columns, all stored as they are, joined on contrast and feature.
+      primaryColumns: topTable.getColumns(),
+      columns: [],
+      tableState: ctx.data.tableState,
+    });
   })
 
+  // One sheet per contrast: every result column is partitioned by it.
   .output("sheets", (ctx) => {
-    const pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
-    if (pCols === undefined || pCols.length === 0) return undefined;
+    const column = getOutputColumns(ctx.outputs?.resolve("topTablePf"))?.getColumns()[0];
+    if (column === undefined || !hasReachableData(column)) return undefined;
+    const data = column.getData();
+    if (!(data instanceof TreeNodeAccessor)) return undefined;
 
-    // Get unique contrast values
-    const contrasts = getUniquePartitionKeys(pCols[0].data)?.[0];
+    const contrasts = getUniquePartitionKeys(data)?.[0];
     if (!contrasts) return undefined;
 
-    return [createPlDataTableSheet(ctx, pCols[0].spec.axesSpec[0], contrasts)];
-  })
-
-  .output("test", (ctx) => {
-    const pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
-    if (pCols === undefined || pCols.length === 0) return undefined;
-
-    // Get unique contrast values
-    const contrasts = getUniquePartitionKeys(pCols[0].data)?.[0];
-    if (!contrasts) return undefined;
-
-    return getUniquePartitionKeys(pCols[0].data);
+    return [createPlDataTableSheet(ctx, column.getSpec().axesSpec[0], contrasts)];
   })
 
   .outputWithStatus("topTablePf", (ctx) => {
-    let pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
-    if (pCols === undefined) return undefined;
-
-    pCols = filterPCols(pCols);
-
-    return createPFrameForGraphs(ctx, pCols);
+    const graphColumns = getOutputColumns(ctx.outputs?.resolve("topTablePf"))
+      ?.filter({ include: { name: GRAPH_COLUMN_NAMES } })
+      .getColumns();
+    if (graphColumns === undefined) return undefined;
+    return createPFrameForGraphs(ctx, toPColumns(graphColumns));
   })
 
   .output("topTablePcols", (ctx) => {
-    let pCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
-    if (pCols === undefined) return undefined;
-    pCols = filterPCols(pCols);
-
-    return pCols.map(
-      (c) =>
-        ({
-          columnId: c.id,
-          spec: c.spec,
-        }) satisfies PColumnIdAndSpec,
-    );
+    const graphColumns = getOutputColumns(ctx.outputs?.resolve("topTablePf"))
+      ?.filter({ include: { name: GRAPH_COLUMN_NAMES } })
+      .getColumns();
+    if (graphColumns === undefined) return undefined;
+    return graphColumns
+      .filter(isDataColumn)
+      .map<PColumnIdAndSpec>((column) => ({ columnId: column.id, spec: column.getSpec() }));
   })
 
   .output("msaPf", (ctx) => {
-    const msaCols = ctx.outputs?.resolve("topTablePf")?.getPColumns();
-    if (!msaCols) return undefined;
+    const topTable = getOutputColumns(ctx.outputs?.resolve("topTablePf"));
+    if (topTable === undefined) return undefined;
 
     const datasetRef = ctx.data.countsRef;
     if (datasetRef === undefined) return undefined;
 
-    const seqCols = ctx.resultPool.getAnchoredPColumns({ main: datasetRef }, [
-      { axes: [{ anchor: "main", idx: 1 }] },
-    ]);
-    if (seqCols === undefined) return undefined;
+    const featureColumns = getFeatureColumns(datasetRef);
+    if (featureColumns === undefined) return undefined;
 
-    return createPFrameForGraphs(ctx, [...msaCols, ...seqCols]);
+    return createPFrameForGraphs(ctx, toPColumns([...topTable.getColumns(), ...featureColumns]));
   })
 
   .title(() => "Differential abundance")

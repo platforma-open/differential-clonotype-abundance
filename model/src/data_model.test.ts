@@ -3,6 +3,7 @@ import {
   createColumnValueId,
   createGlobalPObjectId,
   createPlDataTableStateV2,
+  normalizeBlockStorage,
 } from "@platforma-sdk/model";
 import { describe, expect, test } from "vitest";
 import { blockDataModel } from "./data_model";
@@ -18,11 +19,31 @@ const storedAtV20260929 = {
   contrastFactor: ref("samples", "metadata.tissue"),
   denominator: "control",
   numerators: ["treated", "relapsed"],
-  log2FcThreshold: 1,
-  pAdjThreshold: 0.05,
+  log2FcThreshold: 1.5,
+  pAdjThreshold: 0.01,
   tableState: createPlDataTableStateV2(),
-  graphState: { title: "Differential abundance", template: "dots", currentTab: null },
-  alignmentModel: {},
+  graphState: { title: "Tissue contrast", template: "dots", currentTab: "settings" },
+  alignmentModel: { widgets: ["consensus", "legend"] },
+};
+
+const kept = {
+  customBlockLabel: storedAtV20260929.customBlockLabel,
+  log2FcThreshold: storedAtV20260929.log2FcThreshold,
+  pAdjThreshold: storedAtV20260929.pAdjThreshold,
+  tableState: storedAtV20260929.tableState,
+  graphState: storedAtV20260929.graphState,
+  alignmentModel: storedAtV20260929.alignmentModel,
+};
+
+const converted = {
+  countsRef: createGlobalPObjectId("mixcr", "abundance"),
+  covariateRefs: [createGlobalPObjectId("samples", "metadata.donor")],
+  contrastFactor: tissue,
+  denominator: createColumnValueId({ column: tissue, value: "control" }),
+  numerators: [
+    createColumnValueId({ column: tissue, value: "treated" }),
+    createColumnValueId({ column: tissue, value: "relapsed" }),
+  ],
 };
 
 function migrate(stored: Record<string, unknown>) {
@@ -107,5 +128,49 @@ describe("V20261020 migration", () => {
         numerators,
       }),
     ).not.toThrow();
+  });
+
+  test("the label, thresholds, table, graph and alignment settings are kept", () => {
+    expect(data).toMatchObject(kept);
+  });
+});
+
+describe("data stored before V20260929", () => {
+  test("reaches the latest version with the same picks and settings", () => {
+    const { version, data } = blockDataModel.migrate({
+      version: "V20260520",
+      data: storedAtV20260929,
+    });
+    expect(version).toBe("V20261020");
+    expect(data).toStrictEqual({ ...kept, ...converted });
+  });
+});
+
+describe("legacy { args, uiState } data", () => {
+  test("reaches the latest version with the same picks and settings", () => {
+    const storage = normalizeBlockStorage({
+      args: {
+        defaultBlockLabel: "Abundance",
+        customBlockLabel: kept.customBlockLabel,
+        countsRef: storedAtV20260929.countsRef,
+        covariateRefs: storedAtV20260929.covariateRefs,
+        contrastFactor: storedAtV20260929.contrastFactor,
+        denominator: storedAtV20260929.denominator,
+        numerators: storedAtV20260929.numerators,
+        log2FcThreshold: kept.log2FcThreshold,
+        pAdjThreshold: kept.pAdjThreshold,
+      },
+      uiState: {
+        tableState: kept.tableState,
+        graphState: kept.graphState,
+        alignmentModel: kept.alignmentModel,
+      },
+    });
+    const { version, data } = blockDataModel.migrate({
+      version: storage.__dataVersion,
+      data: storage.__data,
+    });
+    expect(version).toBe("V20261020");
+    expect(data).toStrictEqual({ ...kept, ...converted });
   });
 });

@@ -51,6 +51,19 @@ describe("V20261020 migration", () => {
     expect(numerators).toEqual([createColumnValueId({ column: tissue, value: "2" })]);
   });
 
+  test("a group stored as a number becomes its decimal text", () => {
+    const { denominator, numerators } = migrate({
+      ...storedAtV20260929,
+      denominator: 2,
+      numerators: [0.5, "2"],
+    });
+    expect(denominator).toBe(createColumnValueId({ column: tissue, value: "2" }));
+    expect(numerators).toEqual([
+      createColumnValueId({ column: tissue, value: "0.5" }),
+      createColumnValueId({ column: tissue, value: "2" }),
+    ]);
+  });
+
   test("groups already stored as column value ids are kept", () => {
     const other = createGlobalPObjectId("samples", "metadata.timepoint");
     const kept = createColumnValueId({ column: other, value: "day 7" });

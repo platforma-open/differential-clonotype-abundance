@@ -51,8 +51,8 @@ describe("the compared groups", () => {
     expect(parse(params)).toEqual(params);
   });
 
-  it("accepts a numeric value of the contrast factor column", () => {
-    const params = { denominator: createColumnValueId({ column: TISSUE, value: 2 }) };
+  it("accepts a value of a number contrast factor column, which is picked as its text", () => {
+    const params = { denominator: createColumnValueId({ column: TISSUE, value: "2" }) };
     expect(parse(params)).toEqual(params);
   });
 
@@ -73,6 +73,10 @@ describe("the compared groups", () => {
     ["a number", 0],
     ["a plain value, which names no producing block", "control"],
     ["a column id rather than a value of it", TISSUE],
+    [
+      "a column value id holding a number rather than text",
+      JSON.stringify({ __isColumnValue: true, column: TISSUE, value: 2 }),
+    ],
   ])("rejects a denominator as %s", (_label, denominator) => {
     expect(() => parse({ denominator })).toThrow("'denominator' must be");
   });

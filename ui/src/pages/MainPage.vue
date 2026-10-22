@@ -16,10 +16,11 @@ import {
   PlDatasetSelector,
   PlDropdown,
   PlDropdownMulti,
-  PlIcon24,
+  PlMaskIcon24,
   PlNumberField,
   PlRow,
   PlSlideModal,
+  useColumnValueOptions,
   usePlDataTableSettingsV2,
   useWatchFetch,
 } from "@platforma-sdk/ui-vue";
@@ -109,15 +110,23 @@ const contrastFactorOptions = computed(() => {
 });
 
 /**
- * Values of the contrast factor column, while they describe the contrast factor picked now. The
- * model output follows the pick with a lag; until it catches up the pickers show as loading.
+ * Values of the contrast factor column picked now. While they load the pickers show as loading.
  * A picked value missing from them stays picked and is shown as not available.
  */
+const contrastValues = useColumnValueOptions({
+  source: () => app.model.outputs.contrastValues,
+  column: () => app.model.data.contrastFactor,
+});
+
 const numeratorOptions = computed(() => {
-  const output = app.model.outputs.contrastValueOptions;
-  const contrastFactor = app.model.data.contrastFactor;
-  if (output === undefined || contrastFactor === undefined) return undefined;
-  return output.computedFor === contrastFactor ? output.options : undefined;
+  const state = contrastValues.value;
+  if (state === undefined || state.type === "loading") return undefined;
+  return state.type === "read" ? state.options : [];
+});
+
+const contrastValuesError = computed(() => {
+  const state = contrastValues.value;
+  return state?.type === "failed" ? state.message : undefined;
 });
 
 // Only options not selected as numerators[] are accepted as denominator
@@ -217,7 +226,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <PlBtnGhost @click.stop="showSettings">
         Settings
         <template #append>
-          <PlIcon24 name="settings" />
+          <PlMaskIcon24 name="settings" />
         </template>
       </PlBtnGhost>
     </template>
@@ -267,6 +276,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <PlDropdownMulti
         v-model="app.model.data.numerators"
         :options="numeratorOptions"
+        :error="contrastValuesError"
         label="Numerator"
         :required="true"
       >
@@ -278,6 +288,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <PlDropdown
         v-model="app.model.data.denominator"
         :options="denominatorOptions"
+        :error="contrastValuesError"
         label="Denominator"
         :required="true"
       />

@@ -3,7 +3,6 @@ import type {
   PColumn,
   PColumnDataUniversal,
   RelaxedColumnSelector,
-  RenderCtxBase,
   StringMatcher,
   TreeNodeAccessor,
 } from "@platforma-sdk/model";
@@ -26,8 +25,8 @@ export type ColumnPickerOption = {
  * two axes), raw rather than normalized, and keyed by clonotypes, clusters, peptides, variants
  * or genes — not by single-cell clonotypes or their clusters.
  */
-export function getCountsOptions(ctx: RenderCtxBase): ColumnPickerOption[] {
-  const columns = resultPool(ctx).filter({
+export function getCountsOptions(): ColumnPickerOption[] {
+  const columns = resultPool().filter({
     include: [CLONOTYPE_ABUNDANCE, RNA_SEQ_COUNTS],
     exclude: SINGLE_CELL_KEYED,
   });
@@ -37,8 +36,8 @@ export function getCountsOptions(ctx: RenderCtxBase): ColumnPickerOption[] {
 }
 
 /** Sample metadata columns of upstream blocks, offered as the design covariates. */
-export function getMetadataOptions(ctx: RenderCtxBase): ColumnPickerOption[] {
-  const columns = resultPool(ctx).filter({ include: { name: [exact(METADATA_COLUMN_NAME)] } });
+export function getMetadataOptions(): ColumnPickerOption[] {
+  const columns = resultPool().filter({ include: { name: [exact(METADATA_COLUMN_NAME)] } });
   return toPickerOptions(deriveColumnOptions(columns));
 }
 
@@ -46,9 +45,9 @@ export function getMetadataOptions(ctx: RenderCtxBase): ColumnPickerOption[] {
  * The column with this id, found by id alone. `undefined` while it is still resolving and once
  * it is gone: a stored id may name a column its upstream block no longer produces.
  */
-export function findColumn(ctx: RenderCtxBase, id: ColumnUniversalId): ColumnRecipe | undefined {
-  if (ColumnRecipe.getStatus(id, { ctx: ctx.ctx }) !== "present") return undefined;
-  return Column(id, { ctx: ctx.ctx });
+export function findColumn(id: ColumnUniversalId): ColumnRecipe | undefined {
+  if (ColumnRecipe.getStatus(id) !== "present") return undefined;
+  return Column(id);
 }
 
 /**
@@ -56,11 +55,10 @@ export function findColumn(ctx: RenderCtxBase, id: ColumnUniversalId): ColumnRec
  * of it has arrived.
  */
 export function getOutputColumns(
-  ctx: RenderCtxBase,
   accessor: TreeNodeAccessor | undefined,
 ): ColumnsCollection | undefined {
   if (accessor === undefined) return undefined;
-  const collection = ColumnsCollection([accessor], { ctx: ctx.ctx });
+  const collection = ColumnsCollection([accessor]);
   return collection.isFinal() ? collection : undefined;
 }
 
@@ -68,16 +66,13 @@ export function getOutputColumns(
  * Upstream columns keyed by the abundance column's feature axis (axis 1) alone — the sequences
  * and other per-feature columns shown next to the results.
  */
-export function getFeatureColumns(
-  ctx: RenderCtxBase,
-  countsRef: ColumnUniversalId,
-): ColumnRecipe[] | undefined {
-  const featureAxis = findColumn(ctx, countsRef)?.getSpec().axesSpec[1];
+export function getFeatureColumns(countsRef: ColumnUniversalId): ColumnRecipe[] | undefined {
+  const featureAxis = findColumn(countsRef)?.getSpec().axesSpec[1];
   if (featureAxis === undefined) return undefined;
   const domain = Object.fromEntries(
     Object.entries(featureAxis.domain ?? {}).map(([key, value]) => [key, [exact(value)]]),
   );
-  return resultPool(ctx)
+  return resultPool()
     .filter({
       include: {
         axes: [{ name: [exact(featureAxis.name)], domain }],
@@ -125,8 +120,8 @@ const SINGLE_CELL_KEYED: RelaxedColumnSelector = {
   partialAxesMatch: true,
 };
 
-function resultPool(ctx: RenderCtxBase): ColumnsCollection {
-  return ColumnsCollection(["result_pool"], { ctx: ctx.ctx });
+function resultPool(): ColumnsCollection {
+  return ColumnsCollection(["result_pool"]);
 }
 
 function exact(value: string): StringMatcher {

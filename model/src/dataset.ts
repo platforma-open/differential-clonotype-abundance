@@ -41,7 +41,7 @@ export function getCountsDatasetOptions(ctx: RenderCtxBase): DatasetOption[] {
       requireEnrichments: false,
     }) ?? [];
 
-  return getCountsOptions(ctx).flatMap(({ value, label }): DatasetOption[] => {
+  return getCountsOptions().flatMap(({ value, label }): DatasetOption[] => {
     const ref = toPlRef(value);
     if (ref === undefined) return [];
     const primary = { ref, label };

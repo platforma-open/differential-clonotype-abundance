@@ -104,12 +104,12 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
 
   .output("countsOptions", (ctx) => getCountsDatasetOptions(ctx))
 
-  .output("metadataOptions", (ctx) => getMetadataOptions(ctx))
+  .output("metadataOptions", () => getMetadataOptions())
 
   .output("isPeptide", (ctx): boolean => {
     const ref = ctx.data.countsRef;
     if (ref === undefined) return false;
-    const keyAxis = findColumn(ctx, ref)?.getSpec().axesSpec[1];
+    const keyAxis = findColumn(ref)?.getSpec().axesSpec[1];
     if (keyAxis?.name !== "pl7.app/variantKey") return false;
     const domain = keyAxis.domain ?? {};
     const declared = domain["pl7.app/modality"];
@@ -122,7 +122,7 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
 
   .output("datasetSpec", (ctx) => {
     const ref = ctx.data.countsRef;
-    return ref === undefined ? undefined : findColumn(ctx, ref)?.getSpec();
+    return ref === undefined ? undefined : findColumn(ref)?.getSpec();
   })
 
   // The values of the contrast factor column, for the numerator and denominator pickers.
@@ -140,19 +140,19 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
       ?.getDataAsJson<{ sample: string; missing: string[] }[]>();
     if (dropped === undefined || dropped.length === 0) return undefined;
     const ref = ctx.data.countsRef;
-    const labels = ref === undefined ? undefined : getSampleLabels(ctx, ref);
+    const labels = ref === undefined ? undefined : getSampleLabels(ref);
     return dropped.map((d) => ({ sample: labels?.[d.sample] ?? d.sample, missing: d.missing }));
   })
 
   .output("errorLogs", (ctx) => {
-    const errorLogs = getOutputColumns(ctx, ctx.outputs?.resolve("errorLogs"));
+    const errorLogs = getOutputColumns(ctx.outputs?.resolve("errorLogs"));
     if (errorLogs === undefined) return undefined;
     return ctx.createPFrame(errorLogs.getColumnIds());
   })
 
   // Returns a map of results
   .outputWithStatus("pt", (ctx) => {
-    const topTable = getOutputColumns(ctx, ctx.outputs?.resolve("topTablePf"));
+    const topTable = getOutputColumns(ctx.outputs?.resolve("topTablePf"));
     if (topTable === undefined) return undefined;
     return createPlDataTableV3(ctx, {
       // The block's own result columns, all stored as they are, joined on contrast and feature.
@@ -164,7 +164,7 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
 
   // One sheet per contrast: every result column is partitioned by it.
   .output("sheets", (ctx) => {
-    const column = getOutputColumns(ctx, ctx.outputs?.resolve("topTablePf"))?.getColumns()[0];
+    const column = getOutputColumns(ctx.outputs?.resolve("topTablePf"))?.getColumns()[0];
     if (column === undefined || !hasReachableData(column)) return undefined;
     const data = column.getData();
     if (!(data instanceof TreeNodeAccessor)) return undefined;
@@ -176,7 +176,7 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
   })
 
   .outputWithStatus("topTablePf", (ctx) => {
-    const graphColumns = getOutputColumns(ctx, ctx.outputs?.resolve("topTablePf"))
+    const graphColumns = getOutputColumns(ctx.outputs?.resolve("topTablePf"))
       ?.filter({ include: { name: GRAPH_COLUMN_NAMES } })
       .getColumns();
     if (graphColumns === undefined) return undefined;
@@ -184,7 +184,7 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
   })
 
   .output("topTablePcols", (ctx) => {
-    const graphColumns = getOutputColumns(ctx, ctx.outputs?.resolve("topTablePf"))
+    const graphColumns = getOutputColumns(ctx.outputs?.resolve("topTablePf"))
       ?.filter({ include: { name: GRAPH_COLUMN_NAMES } })
       .getColumns();
     if (graphColumns === undefined) return undefined;
@@ -194,13 +194,13 @@ export const platforma = BlockModelV3.create({ dataModel: blockDataModel, kind }
   })
 
   .output("msaPf", (ctx) => {
-    const topTable = getOutputColumns(ctx, ctx.outputs?.resolve("topTablePf"));
+    const topTable = getOutputColumns(ctx.outputs?.resolve("topTablePf"));
     if (topTable === undefined) return undefined;
 
     const datasetRef = ctx.data.countsRef;
     if (datasetRef === undefined) return undefined;
 
-    const featureColumns = getFeatureColumns(ctx, datasetRef);
+    const featureColumns = getFeatureColumns(datasetRef);
     if (featureColumns === undefined) return undefined;
 
     return createPFrameForGraphs(ctx, toPColumns([...topTable.getColumns(), ...featureColumns]));

@@ -1,5 +1,17 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance
 
+## 1.9.4
+
+### Patch Changes
+
+- dcb9062: Release every package through npm trusted publishing (OIDC) so each package's trusted publisher is used before it expires.
+
+## 1.9.3
+
+### Patch Changes
+
+- e00c5df: The input checks before the analysis are cached for 24 hours, as intended; the cache time was set in milliseconds where nanoseconds are expected, so it lasted about 86 ms.
+
 ## 1.9.2
 
 ### Patch Changes

@@ -125,7 +125,7 @@ wf.body(func(args) {
 			saveFile("errorLogs.csv").
 			saveFile("covariates-clean.csv").
 			saveFileContent("dropped.json").
-			cache(24 * 60 * 60 * 1000).
+			cacheHours(24).
 			run()
 
 	// This content is resolved in a sub-template only

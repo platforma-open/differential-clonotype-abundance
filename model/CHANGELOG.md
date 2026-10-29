@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.model
 
+## 2.10.2
+
+### Patch Changes
+
+- dcb9062: Release every package through npm trusted publishing (OIDC) so each package's trusted publisher is used before it expires.
+
 ## 2.10.1
 
 ### Patch Changes

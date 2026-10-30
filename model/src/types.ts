@@ -9,6 +9,8 @@ import type {
 export type BlockData = {
   customBlockLabel: string;
   countsRef?: PlRef;
+  /** Subset column picked with the counts in PlDatasetSelector (e.g. a Repertoire Labeling label). */
+  filterRef?: PlRef;
   covariateRefs: PlRef[];
   contrastFactor?: PlRef;
   denominator?: string;
@@ -31,6 +33,8 @@ export type BlockArgs = {
   numerators: string[];
   log2FcThreshold: number;
   pAdjThreshold: number;
+  /** Canonical id of the subset column; absent without a filter. */
+  inputFilter?: string;
 };
 
 /** Pre-V3 args shape, frozen snapshot for `upgradeLegacy`. */

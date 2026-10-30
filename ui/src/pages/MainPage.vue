@@ -235,6 +235,10 @@ const droppedSamplesText = computed(() => {
   return `${dropped.length} sample(s) left out of the comparison because a design value is missing: ${list}.`;
 });
 
+// Closing hides the warning until a run drops a different set of samples.
+const droppedSamplesOpen = ref(true);
+watch(droppedSamplesText, () => (droppedSamplesOpen.value = true));
+
 const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
 </script>
 
@@ -262,7 +266,13 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
     <PlAlert v-if="errorLogs.value !== undefined" type="warn" icon>
       {{ errorLogs.value }}
     </PlAlert>
-    <PlAlert v-if="droppedSamplesText !== undefined" type="warn" icon>
+    <PlAlert
+      v-if="droppedSamplesText !== undefined"
+      v-model="droppedSamplesOpen"
+      type="warn"
+      icon
+      closeable
+    >
       {{ droppedSamplesText }}
     </PlAlert>
     <ErrorBoundary>

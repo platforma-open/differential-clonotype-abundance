@@ -1,5 +1,13 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.workflow
 
+## 2.11.1
+
+### Patch Changes
+
+- 26a8f71: Export the adjusted p-value of each comparison to the result pool, so downstream blocks such as Lead Selection can rank clonotypes by significance
+- Updated dependencies [26a8f71]
+  - @platforma-open/milaboratories.run-diff-clonotype-abundance-deseq2-r.software@1.16.7
+
 ## 2.11.0
 
 ### Minor Changes

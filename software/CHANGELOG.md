@@ -1,5 +1,11 @@
 # @platforma-open/milaboratories.run-deseq2-r.software
 
+## 1.16.7
+
+### Patch Changes
+
+- 26a8f71: Export the adjusted p-value of each comparison to the result pool, so downstream blocks such as Lead Selection can rank clonotypes by significance
+
 ## 1.16.6
 
 ### Patch Changes

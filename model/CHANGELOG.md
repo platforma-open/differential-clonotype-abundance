@@ -1,5 +1,7 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.model
 
+## 2.11.1
+
 ## 2.11.0
 
 ### Minor Changes

@@ -56,7 +56,7 @@ self.validateInputs({
 	}
 })
 
-self.defineOutputs("degPF", "regDirPF", "topDegPF", "contrastExport", "degPF_clonotype", "regDirPF_clonotype")
+self.defineOutputs("degPF", "regDirPF", "topDegPF", "contrastExport", "degPF_clonotype", "regDirPF_clonotype", "padjPF_clonotype")
 
 self.body(func(inputs) {
 	degPF := {}
@@ -64,6 +64,7 @@ self.body(func(inputs) {
 	regDirPF := {}
 	degPF_clonotype := {}
 	regDirPF_clonotype := {}
+	padjPF_clonotype := {}
 	defaultConvMem := inputs.params.defaultConvMem
 	defaultConvCpu := inputs.params.defaultConvCpu
 	contrastFactor := inputs.contrastFactor
@@ -96,7 +97,8 @@ self.body(func(inputs) {
 			topDegPF: topDegPF,
 			contrastExport: {},
 			degPF_clonotype: degPF_clonotype,
-			regDirPF_clonotype: regDirPF_clonotype
+			regDirPF_clonotype: regDirPF_clonotype,
+			padjPF_clonotype: padjPF_clonotype
 		}
 
 	} else {
@@ -108,6 +110,7 @@ self.body(func(inputs) {
 
 		degPframeBuilder_clonotype := pframes.pFrameBuilder()
 		regDirPframeBuilder_clonotype := pframes.pFrameBuilder()
+		padjPframeBuilder_clonotype := pframes.pFrameBuilder()
 
 		traceLabel := inputs.metaInputs.customBlockLabel || inputs.metaInputs.defaultBlockLabel
 
@@ -245,6 +248,28 @@ self.body(func(inputs) {
 					}),
 					DegPf["regulationDirection.data"]
 				)
+
+				padjPframeBuilder_clonotype.add(
+					numerator,
+					exportSpec({
+						kind: "PColumn",
+						name: "pl7.app/differentialAbundance/padj",
+						domain: {
+							runIdLabel: countsSpec.axesSpec[1].domain[runIdLabel],
+							"pl7.app/differentialAbundance/comparison": comparison
+						},
+						valueType: "Double",
+						annotations: {
+							"pl7.app/label": comparison + " (adjusted p-value)",
+							"pl7.app/table/visibility": "optional",
+							"pl7.app/table/orderPriority": "83000"
+						},
+						axesSpec: [
+							countsSpec.axesSpec[1]
+							]
+					}),
+					DegPf["padj.data"]
+				)
 			}
 		}
 
@@ -318,13 +343,15 @@ self.body(func(inputs) {
 		regDirPF = regDirPframeBuilder.build()
 		degPF_clonotype = degPframeBuilder_clonotype.build()
 		regDirPF_clonotype = regDirPframeBuilder_clonotype.build()
+		padjPF_clonotype = padjPframeBuilder_clonotype.build()
 		return {
 			degPF: degPF,
 			regDirPF: regDirPF,
 			topDegPF: pframes.exportFrame(topDegPF),
 			contrastExport: contrastExport,
 			degPF_clonotype: degPF_clonotype,
-			regDirPF_clonotype: regDirPF_clonotype
+			regDirPF_clonotype: regDirPF_clonotype,
+			padjPF_clonotype: padjPF_clonotype
 		}
 	} 
 })

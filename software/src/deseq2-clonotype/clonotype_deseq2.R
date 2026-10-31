@@ -192,7 +192,7 @@ cat("Full results saved to", opt$output, "\n")
 # Filter DEGs with adjusted p-value < p_threshold and absolute log2FoldChange > fc_threshold
 deg_df <- res_df[
   res_df$padj <= opt$p_threshold & abs(res_df$log2FoldChange) >= opt$fc_threshold,
-  c(ids_col, "Contrast", "log2FoldChange", "Regulation")
+  c(ids_col, "Contrast", "log2FoldChange", "padj", "Regulation")
 ]
 # Filter out counts without ID
 deg_df <- deg_df[!is.na(deg_df[ids_col]), ]

@@ -23,6 +23,19 @@ getColumns := func(countsSpec, inputType) {
 				}
 			},
 			{
+				"column": "padj",
+				"id": "padj",
+				"allowNA": true,
+				"spec": {
+					"name": "pl7.app/differentialAbundance/padj",
+					"valueType": "Double",
+					"annotations": {
+						"pl7.app/label": inputType + " Adjusted p-value",
+						"pl7.app/table/orderPriority": "20"
+					}
+				}
+			},
+			{
 				"column": "Regulation",
 				"id": "regulationDirection",
 				"spec": {

@@ -2,6 +2,7 @@ import { kind } from "@platforma-open/milaboratories.differential-clonotype-abun
 import {
   createColumnValueId,
   createGlobalPObjectId,
+  createLocalPObjectId,
   createPlDataTableStateV2,
   normalizeBlockStorage,
 } from "@platforma-sdk/model";
@@ -133,6 +134,43 @@ describe("V20261020 migration", () => {
         numerators,
       }),
     ).not.toThrow();
+  });
+
+  describe("alignment settings", () => {
+    // A sequence column next to the results, picked relative to the counts column.
+    const anchored = '{"axes":[{"anchor":"main","idx":1}],"name":"pl7.app/vdj/sequence"}';
+    const result = createLocalPObjectId(["topTablePf"], "log2foldchange");
+    const sampleAxis = { type: "axis", id: { type: "String", name: "pl7.app/sampleId" } };
+    const colorScheme = { type: "markup", columnIds: [result] };
+
+    test("lists naming an upstream column by an anchored id are reset", () => {
+      const { alignmentModel } = migrate({
+        ...storedAtV20260929,
+        alignmentModel: {
+          widgets: ["consensus"],
+          sequenceColumnIds: [result, anchored],
+          labelColumnIds: [sampleAxis, { type: "column", id: anchored }],
+          colorScheme: { type: "markup", columnIds: [anchored] },
+        },
+      });
+      expect(alignmentModel).toStrictEqual({ widgets: ["consensus"] });
+    });
+
+    test("result columns, axes and color schemes without columns are kept", () => {
+      const alignmentModel = {
+        widgets: ["consensus"],
+        sequenceColumnIds: [result],
+        labelColumnIds: [sampleAxis, { type: "column", id: result }],
+        colorScheme,
+      };
+      expect(migrate({ ...storedAtV20260929, alignmentModel }).alignmentModel).toStrictEqual(
+        alignmentModel,
+      );
+      const plain = { colorScheme: { type: "chemical-properties" } };
+      expect(migrate({ ...storedAtV20260929, alignmentModel: plain }).alignmentModel).toStrictEqual(
+        plain,
+      );
+    });
   });
 
   test("the label, thresholds, table, graph and alignment settings are kept", () => {

@@ -1,9 +1,15 @@
-import type { ColumnUniversalId, ColumnValueId, PlRef } from "@platforma-sdk/model";
+import type {
+  ColumnUniversalId,
+  ColumnValueId,
+  PlMultiSequenceAlignmentModel,
+  PlRef,
+} from "@platforma-sdk/model";
 import {
   createColumnValueId,
   createGlobalPObjectId,
   createPlDataTableStateV2,
   DataModelBuilder,
+  isColumnUniversalId,
   isColumnValueId,
   isPlRef,
 } from "@platforma-sdk/model";
@@ -92,13 +98,15 @@ function withGroupingColorsReseeded(state: BlockData["graphState"]): BlockData["
  * output, which names the same block and column. The compared groups were plain values of the
  * contrast factor column; each becomes the column value id of that value in the converted contrast
  * factor column, in the same order. Without a contrast factor column the plain values belong to
- * no column and are dropped, to be picked again.
+ * no column and are dropped, to be picked again. The alignment settings drop the upstream columns
+ * they name by anchored ids, see {@link withoutAnchoredColumns}.
  */
 function toColumnIds(data: BlockDataV20260929): BlockData {
   const { countsRef, filterRef, contrastFactor, denominator, ...rest } = data;
   const valueColumn = isPlRef(contrastFactor) ? plRefToColumnId(contrastFactor) : undefined;
   return {
     ...rest,
+    alignmentModel: withoutAnchoredColumns(rest.alignmentModel),
     countsRef: countsRef === undefined ? undefined : plRefToColumnId(countsRef),
     ...(filterRef !== undefined && { filterRef: plRefToColumnId(filterRef) }),
     covariateRefs: data.covariateRefs.map(plRefToColumnId),
@@ -108,6 +116,27 @@ function toColumnIds(data: BlockDataV20260929): BlockData {
       const id = toContrastValueId(valueColumn, numerator);
       return id === undefined ? [] : [id];
     }),
+  };
+}
+
+/**
+ * Alignment settings without the upstream columns picked by anchored ids. The sequence, label and
+ * markup columns next to the results were named relative to the counts column; such an id names no
+ * column now. A list holding one is reset and is picked again from its defaults. Columns of this
+ * block's results and axes keep their ids.
+ */
+function withoutAnchoredColumns(
+  model: PlMultiSequenceAlignmentModel,
+): PlMultiSequenceAlignmentModel {
+  const { sequenceColumnIds, labelColumnIds, colorScheme, ...rest } = model;
+  const markupColumnIds = colorScheme?.type === "markup" ? colorScheme.columnIds : [];
+  return {
+    ...rest,
+    ...(sequenceColumnIds?.every(isColumnUniversalId) && { sequenceColumnIds }),
+    ...(labelColumnIds?.every((id) => id.type === "axis" || isColumnUniversalId(id.id)) && {
+      labelColumnIds,
+    }),
+    ...(colorScheme !== undefined && markupColumnIds.every(isColumnUniversalId) && { colorScheme }),
   };
 }
 

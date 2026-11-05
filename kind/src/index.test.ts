@@ -1,4 +1,8 @@
-import { createColumnValueId, createGlobalPObjectId } from "@platforma-sdk/model";
+import {
+  createColumnValueId,
+  createGlobalPObjectId,
+  createLocalPObjectId,
+} from "@platforma-sdk/model";
 import { describe, expect, it } from "vitest";
 import { kind } from "./index";
 
@@ -19,6 +23,10 @@ describe.each(["countsRef", "filterRef", "contrastFactor"] as const)("%s", (fiel
 
   it.each([
     ["a ref object, which earlier versions of the kind took", REF],
+    [
+      "a column id that is not another block's output",
+      createLocalPObjectId(["main"], "pf/abundance"),
+    ],
     ["a string that is not a column id", "pf/abundance"],
     ["a column value id rather than a column", createColumnValueId({ column: TISSUE, value: "x" })],
     ["a number", 42],
@@ -39,6 +47,10 @@ describe("covariateRefs", () => {
   it.each([
     ["a bare column id", TISSUE],
     ["ref objects, which earlier versions of the kind took", [REF]],
+    [
+      "an array holding a column id that is not another block's output",
+      [TISSUE, createLocalPObjectId(["main"], "pf/metadata/tissue")],
+    ],
     ["an array holding a string that is not a column id", [TISSUE, "pf/metadata/tissue"]],
   ])("rejects %s", (_label, covariateRefs) => {
     expect(() => parse({ covariateRefs })).toThrow("'covariateRefs' must be an array");

@@ -18,7 +18,7 @@ import {
   PlDatasetSelector,
   PlDropdown,
   PlDropdownMulti,
-  PlMaskIcon24,
+  PlIcon24,
   PlNumberField,
   PlRow,
   PlSlideModal,
@@ -212,7 +212,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <PlBtnGhost @click.stop="showSettings">
         Settings
         <template #append>
-          <PlMaskIcon24 name="settings" />
+          <PlIcon24 name="settings" />
         </template>
       </PlBtnGhost>
     </template>

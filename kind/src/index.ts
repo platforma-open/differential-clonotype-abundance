@@ -1,6 +1,6 @@
 import { assertParamsObject, defineBlockKind } from "@platforma-sdk/block-kind";
 import type { ColumnUniversalId, ColumnValueId } from "@platforma-sdk/model";
-import { isColumnUniversalId, isColumnValueId } from "@platforma-sdk/model";
+import { isColumnValueId, isGlobalPObjectId } from "@platforma-sdk/model";
 import { name, version } from "../package.json" with { type: "json" };
 
 /**
@@ -48,6 +48,8 @@ export const kind = defineBlockKind<BlockParams>({
 
 // Internals
 
+const OUTPUT_ID = "the result-pool id of another block's output";
+
 /** The same contract at runtime, for params arriving from a template file rather than typed code. */
 function parseInitializationParams(value: unknown): BlockParams {
   assertParamsObject(value);
@@ -64,21 +66,19 @@ function parseInitializationParams(value: unknown): BlockParams {
     customBlockLabel,
   } = value;
 
-  if (countsRef !== undefined && !isColumnUniversalId(countsRef)) {
-    throw new Error("'countsRef' must be an upstream column, written as a column id.");
+  if (countsRef !== undefined && !isGlobalPObjectId(countsRef)) {
+    throw new Error(`'countsRef' must be an upstream column, written as ${OUTPUT_ID}.`);
   }
-  if (filterRef !== undefined && !isColumnUniversalId(filterRef)) {
-    throw new Error("'filterRef' must be an upstream subset column, written as a column id.");
+  if (filterRef !== undefined && !isGlobalPObjectId(filterRef)) {
+    throw new Error(`'filterRef' must be an upstream subset column, written as ${OUTPUT_ID}.`);
   }
   if (covariateRefs !== undefined) {
-    if (!Array.isArray(covariateRefs) || !covariateRefs.every(isColumnUniversalId)) {
-      throw new Error(
-        "'covariateRefs' must be an array of upstream columns, written as column ids.",
-      );
+    if (!Array.isArray(covariateRefs) || !covariateRefs.every(isGlobalPObjectId)) {
+      throw new Error(`'covariateRefs' must be an array of upstream columns, each ${OUTPUT_ID}.`);
     }
   }
-  if (contrastFactor !== undefined && !isColumnUniversalId(contrastFactor)) {
-    throw new Error("'contrastFactor' must be one of the covariates, written as a column id.");
+  if (contrastFactor !== undefined && !isGlobalPObjectId(contrastFactor)) {
+    throw new Error(`'contrastFactor' must be one of the covariates, written as ${OUTPUT_ID}.`);
   }
   // The groups being compared are values of the contrast factor column, so
   // any value the user's metadata holds is legal -- only the column value id

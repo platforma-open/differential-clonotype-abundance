@@ -104,11 +104,14 @@ const dataType = computed<"rna-seq" | "differentialAbundance" | undefined>(() =>
 
 const covariateOptions = computed(() => app.model.outputs.metadataOptions ?? []);
 
+// The design covariates the result pool still provides. A contrast factor picked from a covariate
+// it no longer provides is not among them and shows as not available.
 const contrastFactorOptions = computed(() => {
-  return app.model.data.covariateRefs.map((id) => ({
-    value: id,
-    label: covariateOptions.value.find((m) => m.value === id)?.label ?? "",
-  }));
+  const options = app.model.outputs.metadataOptions;
+  if (options === undefined) return undefined;
+  return app.model.data.covariateRefs.flatMap(
+    (id) => options.find((option) => option.value === id) ?? [],
+  );
 });
 
 /**
@@ -134,15 +137,18 @@ watch(
 );
 
 // If the user removes the covariate that was selected as contrast factor,
-// the current selection is no longer a valid option — clear it. The watcher
+// the contrast factor is no longer part of the design — clear it. The watcher
 // above then clears numerators/denominator as a side-effect.
-watch(contrastFactorOptions, (options) => {
-  const current = app.model.data.contrastFactor;
-  if (current === undefined) return;
-  if (!options.some((o) => o.value === current)) {
-    app.model.data.contrastFactor = undefined;
-  }
-});
+watch(
+  () => app.model.data.covariateRefs,
+  (covariates) => {
+    const current = app.model.data.contrastFactor;
+    if (current === undefined) return;
+    if (!covariates.includes(current)) {
+      app.model.data.contrastFactor = undefined;
+    }
+  },
+);
 
 // @TODO: re-enable together with the `filtersConfig` block above. The reset
 // only makes sense when changing thresholds also changes the default filters

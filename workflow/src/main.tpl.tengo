@@ -7,38 +7,44 @@ pframes := import("@platforma-sdk/workflow-tengo:pframes")
 render := import("@platforma-sdk/workflow-tengo:render")
 ll := import("@platforma-sdk/workflow-tengo:ll")
 pt := import("@platforma-sdk/workflow-tengo:pt")
+json := import("json")
 columnValue := import("@platforma-sdk/workflow-tengo:workflow.column-value")
 
 pfErrorLogsConv := import(":pf-de-errors-conv")
 diffAnalysisTpl := assets.importTemplate(":diffAnalysis")
 
-// The abundance, subset, covariate and contrast factor columns arrive as result-pool column ids.
+// The abundance, subset, covariate and contrast factor columns arrive as result-pool column ids:
+// the canonical JSON of the ref to the upstream output.
 wf.prepare(func(args){
-	bundleBuilder := wf.createPBundleBuilder()
-	bundleBuilder.addSingle(args.countsRef)
-	bundleBuilder.addSingle(args.contrastFactor)
-	for covariateRef in args.covariateRefs {
-		bundleBuilder.addSingle(covariateRef)
+
+	// below solution not working currently
+	metaRefs := {}
+
+	i := 0
+	for metaRef in args.covariateRefs {
+		metaRefs["metaRef" + i ] = wf.resolve(json.decode(metaRef), { errIfMissing: true })
+		i = i + 1
 	}
 
+	resolved := {
+		resolvedInput: wf.resolve(json.decode(args.countsRef), { errIfMissing: true }),
+		resolvedContrastFactor: wf.resolve(json.decode(args.contrastFactor)),
+		metaRefs: metaRefs
+	}
 	// Optional subset column picked alongside the counts (PlDatasetSelector)
 	if !is_undefined(args.inputFilter) {
-		bundleBuilder.addSingle(args.inputFilter)
+		resolved.resolvedFilter = wf.resolve(json.decode(args.inputFilter), { errIfMissing: true })
 	}
-
-	return {
-		columns: bundleBuilder.build()
-	}
+	return resolved
 })
 
 wf.body(func(args) {
 	blockId := wf.blockId().getDataAsJson()
 
-	columns := args.columns
-	allCounts := columns.getColumn(args.countsRef)
+	allCounts := args.resolvedInput
 	countsSpec := allCounts.spec
 
-	contrastFactor := columns.getColumn(args.contrastFactor)
+	contrastFactor := args.resolvedContrastFactor
 	// The compared groups arrive as column value ids of the contrast factor column; the analysis
 	// works with the plain values they carry.
 	numerators := columnValue.valuesOf(args.numerators)
@@ -72,15 +78,15 @@ wf.body(func(args) {
 	defaultConvCpu := 1
 
 	covariates := []
-	for covariateRef in args.covariateRefs {
-		covariates = append(covariates, columns.getColumn(covariateRef))
+	for _, v in args.metaRefs {
+		covariates = append(covariates, v)
 	}
 
 	// convert PColumns to csv
 	csvCovariates := xsv.exportFrame(covariates, "csv", {mem: defaultConvMem, cpu: defaultConvCpu})
 	// Optional subset: only its features enter the analysis. The trace roots in the filter
 	// so downstream labels name it.
-	filterColumn := is_undefined(args.inputFilter) ? undefined : columns.getColumn(args.inputFilter)
+	filterColumn := is_undefined(args.inputFilter) ? undefined : args.resolvedFilter
 
 	// Without a subset, the plain export (unfiltered runs unchanged). With one, the counts are the
 	// filtered primary; headers are the same labels the export writes.

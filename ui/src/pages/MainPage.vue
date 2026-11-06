@@ -1,26 +1,28 @@
 <script setup lang="ts">
 import { PlMultiSequenceAlignment } from "@milaboratories/multi-sequence-alignment";
-import { deriveDefaultLabel } from "@platforma-open/milaboratories.differential-clonotype-abundance.model";
-import type { DatasetSelection, PlSelectionModel } from "@platforma-sdk/model";
 import {
-  createDatasetSelection,
-  createPrimaryRef,
-  PFrameImpl,
-  plRefsEqual,
-} from "@platforma-sdk/model";
+  deriveDefaultLabel,
+  fromCountsSelection,
+  toCountsSelection,
+} from "@platforma-open/milaboratories.differential-clonotype-abundance.model";
+import type { DatasetSelection, PlSelectionModel } from "@platforma-sdk/model";
+import { PFrameImpl } from "@platforma-sdk/model";
 import {
   PlAccordionSection,
   PlAgDataTableV2,
   PlAlert,
   PlBlockPage,
   PlBtnGhost,
+  PlColumnValueDropdown,
+  PlColumnValueDropdownMulti,
   PlDatasetSelector,
   PlDropdown,
   PlDropdownMulti,
-  PlMaskIcon24,
+  PlIcon24,
   PlNumberField,
   PlRow,
   PlSlideModal,
+  usePlColumnValueSettings,
   usePlDataTableSettingsV2,
   useWatchFetch,
 } from "@platforma-sdk/ui-vue";
@@ -73,14 +75,11 @@ const tableSettings = usePlDataTableSettingsV2({
 
 // The selector picks the counts, or the counts narrowed by one of their subset columns.
 const countsSelection = computed<DatasetSelection | undefined>({
-  get: () => {
-    const { countsRef, filterRef } = app.model.data;
-    if (countsRef === undefined) return undefined;
-    return createDatasetSelection(createPrimaryRef(countsRef, filterRef));
-  },
+  get: () => toCountsSelection(app.model.data),
   set: (selection) => {
-    app.model.data.countsRef = selection?.primary.column;
-    app.model.data.filterRef = selection?.primary.filter;
+    const { countsRef, filterRef } = fromCountsSelection(selection);
+    app.model.data.countsRef = countsRef;
+    app.model.data.filterRef = filterRef;
   },
 });
 
@@ -103,48 +102,25 @@ const dataType = computed<"rna-seq" | "differentialAbundance" | undefined>(() =>
   return undefined;
 });
 
-const covariateOptions = computed(() => {
-  return (
-    app.model.outputs.metadataOptions?.map((v) => ({
-      value: v.ref,
-      label: v.label,
-    })) ?? []
+const covariateOptions = computed(() => app.model.outputs.metadataOptions ?? []);
+
+// The design covariates the result pool still provides. A contrast factor picked from a covariate
+// it no longer provides is not among them and shows as not available.
+const contrastFactorOptions = computed(() => {
+  const options = app.model.outputs.metadataOptions;
+  if (options === undefined) return undefined;
+  return app.model.data.covariateRefs.flatMap(
+    (id) => options.find((option) => option.value === id) ?? [],
   );
 });
 
-const contrastFactorOptions = computed(() => {
-  return app.model.data.covariateRefs.map((ref) => ({
-    value: ref,
-    label: covariateOptions.value.find((m) => m.value.name === ref.name)?.label ?? "",
-  }));
-});
-
-// Get all possible numerator/denominator values
-const numeratorOptions = useWatchFetch(
-  () => app.model.outputs.denominatorOptions,
-  async (pframeHandle) => {
-    if (!pframeHandle) {
-      return undefined;
-    }
-    // Get ID of first pcolumn in the pframe (the only one we will access)
-    const pFrame = new PFrameImpl(pframeHandle);
-    const list = await pFrame.listColumns();
-    const id = list?.[0].columnId;
-    if (!id) {
-      return undefined;
-    }
-    // Get unique values of that first pcolumn
-    const response = await pFrame.getUniqueValues({ columnId: id, filters: [], limit: 1000000 });
-    if (!response) {
-      return undefined;
-    }
-    return [...response.values.data].map((v) => ({ value: String(v), label: String(v) }));
-  },
-);
-
-// Only options not selected as numerators[] are accepted as denominator
-const denominatorOptions = computed(() => {
-  return numeratorOptions.value?.filter((op) => !app.model.data.numerators.includes(op.value));
+/**
+ * What the numerator and denominator pickers offer: the values of the contrast factor column
+ * picked now.
+ */
+const contrastValues = usePlColumnValueSettings({
+  source: () => app.model.outputs.contrastValues,
+  valueColumn: () => app.model.data.contrastFactor,
 });
 
 // Reset numerator + denominator when the user changes the contrast factor.
@@ -153,40 +129,23 @@ const denominatorOptions = computed(() => {
 // the legacy numerators/denominator right after they were restored.
 watch(
   () => app.model.data.contrastFactor,
-  (newRef, oldRef) => {
-    if (oldRef === undefined) return;
-    if (newRef !== undefined && plRefsEqual(oldRef, newRef)) return;
+  (_newId, oldId) => {
+    if (oldId === undefined) return;
     app.model.data.numerators = [];
     app.model.data.denominator = undefined;
   },
 );
 
 // If the user removes the covariate that was selected as contrast factor,
-// the current selection is no longer a valid option — clear it. The watcher
+// the contrast factor is no longer part of the design — clear it. The watcher
 // above then clears numerators/denominator as a side-effect.
-watch(contrastFactorOptions, (options) => {
-  const current = app.model.data.contrastFactor;
-  if (current === undefined) return;
-  if (!options.some((o) => plRefsEqual(o.value, current))) {
-    app.model.data.contrastFactor = undefined;
-  }
-});
-
-// Backstop: drop any numerator/denominator values that aren't in the current
-// options list. Defends against race conditions when the user changes the
-// contrast factor and picks new values before the async option fetch settles —
-// stale entries from the previous contrast factor get pruned here.
 watch(
-  () => numeratorOptions.value,
-  (options) => {
-    if (options === undefined) return; // not yet loaded
-    const valid = new Set(options.map((o) => o.value));
-    const pruned = app.model.data.numerators.filter((n) => valid.has(n));
-    if (pruned.length !== app.model.data.numerators.length) {
-      app.model.data.numerators = pruned;
-    }
-    if (app.model.data.denominator !== undefined && !valid.has(app.model.data.denominator)) {
-      app.model.data.denominator = undefined;
+  () => app.model.data.covariateRefs,
+  (covariates) => {
+    const current = app.model.data.contrastFactor;
+    if (current === undefined) return;
+    if (!covariates.includes(current)) {
+      app.model.data.contrastFactor = undefined;
     }
   },
 );
@@ -259,7 +218,7 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
       <PlBtnGhost @click.stop="showSettings">
         Settings
         <template #append>
-          <PlMaskIcon24 name="settings" />
+          <PlIcon24 name="settings" />
         </template>
       </PlBtnGhost>
     </template>
@@ -306,9 +265,9 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
         label="Contrast factor"
         :required="true"
       />
-      <PlDropdownMulti
+      <PlColumnValueDropdownMulti
         v-model="app.model.data.numerators"
-        :options="numeratorOptions.value"
+        :settings="contrastValues"
         label="Numerator"
         :required="true"
       >
@@ -316,10 +275,12 @@ const defaultLabel = computed(() => deriveDefaultLabel(app.model.data));
           Calculate a contrast per each one of the selected Numerators versus the selected
           control/baseline
         </template>
-      </PlDropdownMulti>
-      <PlDropdown
+      </PlColumnValueDropdownMulti>
+      <!-- A value picked as a numerator is not offered as the denominator -->
+      <PlColumnValueDropdown
         v-model="app.model.data.denominator"
-        :options="denominatorOptions"
+        :settings="contrastValues"
+        :exclude="app.model.data.numerators"
         label="Denominator"
         :required="true"
       />

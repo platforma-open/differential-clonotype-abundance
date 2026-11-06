@@ -1,6 +1,6 @@
 import { assertParamsObject, defineBlockKind } from "@platforma-sdk/block-kind";
-import type { PlRef } from "@platforma-sdk/model";
-import { isPlRef } from "@platforma-sdk/model";
+import type { ColumnUniversalId, ColumnValueId } from "@platforma-sdk/model";
+import { isColumnValueId, isGlobalPObjectId } from "@platforma-sdk/model";
 import { name, version } from "../package.json" with { type: "json" };
 
 /**
@@ -13,6 +13,12 @@ import { name, version } from "../package.json" with { type: "json" };
  * from the comparison inside `.args`, so it can never disagree with the data
  * it describes.
  *
+ * The columns (`countsRef`, `filterRef`, `covariateRefs`, `contrastFactor`) are result-pool
+ * column ids, each naming the block that produced the column. The compared
+ * groups (`numerators`, `denominator`) are column value ids of the contrast
+ * factor column: each names the column it was picked from, and through it the
+ * block that produced the value.
+ *
  * Every field is optional. A half-configured block is ordinary state the UI
  * reaches -- picking the dataset leaves the contrast unset, and choosing a
  * contrast factor deliberately clears the groups -- and the projection hands
@@ -20,12 +26,12 @@ import { name, version } from "../package.json" with { type: "json" };
  * round trip.
  */
 export type BlockParams = {
-  countsRef?: PlRef;
-  filterRef?: PlRef;
-  covariateRefs?: PlRef[];
-  contrastFactor?: PlRef;
-  numerators?: string[];
-  denominator?: string;
+  countsRef?: ColumnUniversalId;
+  filterRef?: ColumnUniversalId;
+  covariateRefs?: ColumnUniversalId[];
+  contrastFactor?: ColumnUniversalId;
+  numerators?: ColumnValueId[];
+  denominator?: ColumnValueId;
   log2FcThreshold?: number;
   pAdjThreshold?: number;
   customBlockLabel?: string;
@@ -41,6 +47,8 @@ export const kind = defineBlockKind<BlockParams>({
 });
 
 // Internals
+
+const OUTPUT_ID = "the result-pool id of another block's output";
 
 /** The same contract at runtime, for params arriving from a template file rather than typed code. */
 function parseInitializationParams(value: unknown): BlockParams {
@@ -58,35 +66,33 @@ function parseInitializationParams(value: unknown): BlockParams {
     customBlockLabel,
   } = value;
 
-  if (countsRef !== undefined && !isPlRef(countsRef)) {
-    throw new Error(
-      "'countsRef' must be a reference to an upstream column, written as { block, name }.",
-    );
+  if (countsRef !== undefined && !isGlobalPObjectId(countsRef)) {
+    throw new Error(`'countsRef' must be an upstream column, written as ${OUTPUT_ID}.`);
   }
-  if (filterRef !== undefined && !isPlRef(filterRef)) {
-    throw new Error(
-      "'filterRef' must be a reference to an upstream subset column, written as { block, name }.",
-    );
+  if (filterRef !== undefined && !isGlobalPObjectId(filterRef)) {
+    throw new Error(`'filterRef' must be an upstream subset column, written as ${OUTPUT_ID}.`);
   }
   if (covariateRefs !== undefined) {
-    if (!Array.isArray(covariateRefs) || !covariateRefs.every(isPlRef)) {
-      throw new Error("'covariateRefs' must be an array of { block, name } references.");
+    if (!Array.isArray(covariateRefs) || !covariateRefs.every(isGlobalPObjectId)) {
+      throw new Error(`'covariateRefs' must be an array of upstream columns, each ${OUTPUT_ID}.`);
     }
   }
-  if (contrastFactor !== undefined && !isPlRef(contrastFactor)) {
-    throw new Error("'contrastFactor' must be one of the covariate references.");
+  if (contrastFactor !== undefined && !isGlobalPObjectId(contrastFactor)) {
+    throw new Error(`'contrastFactor' must be one of the covariates, written as ${OUTPUT_ID}.`);
   }
   // The groups being compared are values of the contrast factor column, so
-  // anything the user's metadata holds is legal -- only the array-of-strings
-  // envelope is checked. The settings panel prunes values the data does not
-  // have once the option list loads.
+  // any value the user's metadata holds is legal -- only the column value id
+  // form is checked. A value the column no longer holds stays picked and is
+  // shown as not available.
   if (numerators !== undefined) {
-    if (!Array.isArray(numerators) || !numerators.every((v) => typeof v === "string")) {
-      throw new Error("'numerators' must be an array of contrast factor values.");
+    if (!Array.isArray(numerators) || !numerators.every(isColumnValueId)) {
+      throw new Error(
+        "'numerators' must be an array of contrast factor values, written as column value ids.",
+      );
     }
   }
-  if (denominator !== undefined && typeof denominator !== "string") {
-    throw new Error("'denominator' must be a contrast factor value.");
+  if (denominator !== undefined && !isColumnValueId(denominator)) {
+    throw new Error("'denominator' must be a contrast factor value, written as a column value id.");
   }
   // A threshold on the *absolute* log2 fold change, so it has no upper bound
   // and cannot be negative.
@@ -104,9 +110,9 @@ function parseInitializationParams(value: unknown): BlockParams {
   return {
     countsRef,
     filterRef,
-    covariateRefs: covariateRefs as PlRef[] | undefined,
+    covariateRefs,
     contrastFactor,
-    numerators: numerators as string[] | undefined,
+    numerators,
     denominator,
     log2FcThreshold,
     pAdjThreshold,

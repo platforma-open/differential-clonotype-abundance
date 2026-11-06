@@ -8,10 +8,13 @@ render := import("@platforma-sdk/workflow-tengo:render")
 ll := import("@platforma-sdk/workflow-tengo:ll")
 pt := import("@platforma-sdk/workflow-tengo:pt")
 json := import("json")
+columnValue := import("@platforma-sdk/workflow-tengo:workflow.column-value")
 
 pfErrorLogsConv := import(":pf-de-errors-conv")
 diffAnalysisTpl := assets.importTemplate(":diffAnalysis")
 
+// The abundance, subset, covariate and contrast factor columns arrive as result-pool column ids:
+// the canonical JSON of the ref to the upstream output.
 wf.prepare(func(args){
 
 	// below solution not working currently
@@ -19,13 +22,13 @@ wf.prepare(func(args){
 
 	i := 0
 	for metaRef in args.covariateRefs {
-		metaRefs["metaRef" + i ] = wf.resolve(metaRef, { errIfMissing: true })
+		metaRefs["metaRef" + i ] = wf.resolve(json.decode(metaRef), { errIfMissing: true })
 		i = i + 1
 	}
 
 	resolved := {
-		resolvedInput: wf.resolve(args.countsRef, { errIfMissing: true }),
-		resolvedContrastFactor: wf.resolve(args.contrastFactor),
+		resolvedInput: wf.resolve(json.decode(args.countsRef), { errIfMissing: true }),
+		resolvedContrastFactor: wf.resolve(json.decode(args.contrastFactor)),
 		metaRefs: metaRefs
 	}
 	// Optional subset column picked alongside the counts (PlDatasetSelector)
@@ -42,7 +45,10 @@ wf.body(func(args) {
 	countsSpec := allCounts.spec
 
 	contrastFactor := args.resolvedContrastFactor
-	denominator := string(args.denominator)
+	// The compared groups arrive as column value ids of the contrast factor column; the analysis
+	// works with the plain values they carry.
+	numerators := columnValue.valuesOf(args.numerators)
+	denominator := string(columnValue.valueOf(args.denominator))
 	log2FcThreshold := args.log2FcThreshold
 	pAdjThreshold := args.pAdjThreshold
 
@@ -116,7 +122,7 @@ wf.body(func(args) {
 			arg("--metadata").arg("covariates.csv").
 			addFile("covariates.csv", csvCovariates).
 			arg("--contrast_factor").arg(contrastFactor.spec.annotations["pl7.app/label"]).
-			arg("--numerators").arg(string(args.numerators)).
+			arg("--numerators").arg(string(numerators)).
 			arg("--denominator").arg(denominator).
 			arg("--error_output").arg("./errorLogs.csv").
 			arg("--clean_metadata").arg("covariates-clean.csv").
@@ -142,7 +148,7 @@ wf.body(func(args) {
 		csvCounts: csvCounts,
 		// Samples with a missing design value are left out by the checks and reported in the UI
 		csvCovariates: continueCheck.getFile("covariates-clean.csv"),
-		numerators: args.numerators,
+		numerators: numerators,
 		denominator: denominator,
 		contrastFactor: contrastFactor,
 		params: {

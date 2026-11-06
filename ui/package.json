@@ -1,6 +1,6 @@
 {
   "name": "@platforma-open/milaboratories.differential-clonotype-abundance.ui",
-  "version": "2.11.1",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,5 +1,13 @@
 # @platforma-open/milaboratories.differential-clonotype-abundance.model
 
+## 3.0.1
+
+### Patch Changes
+
+- 9f4e9dd: Update the SDK to 1.90.2. The alignment no longer fails with `Duplicate column id … in provider ResultPool` when the abundance column has sequence or label columns upstream.
+- Updated dependencies [9f4e9dd]
+  - @platforma-open/milaboratories.differential-clonotype-abundance.kind@2.0.1
+
 ## 3.0.0
 
 ### Major Changes
